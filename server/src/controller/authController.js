@@ -2,7 +2,7 @@ import bcrypt from "bcryptjs"
 import User from "../models/User.js"
 import generateToken from "../utils/generateToken.js";
 
-export const signup = async(req,res)=>{
+export const register = async(req,res)=>{
     try{
       const {name,email,password,role} = req.body;
       if(!name || !email || !password || !role){
@@ -57,10 +57,20 @@ export const login = async(req,res)=>{
       },})
 
     }catch(error){
-      res.status(500).json({success:false,message:"Internal server error"})
+      res.status(500).json({success:false,message:error.message})
     }
 }
 
 export const logout =  async (req,res)=>{
        return res.status(200).json({success:true,message:"Logout successfull"})
+}
+export const getme = async(req,res)=>{
+  try{
+    res.status(200).json({
+      success: true,
+      user:req.user
+    })
+  }catch(error){
+    res.status(500).json({success:false,message:"Internal server error"})
+  }
 }
