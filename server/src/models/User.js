@@ -5,7 +5,6 @@ const userSchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
-      trim: true,
     },
 
     email: {
@@ -27,6 +26,7 @@ const userSchema = new mongoose.Schema(
       enum: ["customer", "admin"],
       default: "customer",
     },
+
   },
   {
     timestamps: true,

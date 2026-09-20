@@ -1,12 +1,9 @@
-const express = require("express");
-const cors = require("cors");
-require("dotenv").config();
+import connectDB from "./config/db.js"
+import dotenv from "dotenv"
+import app from "../src/app.js"
 
-const app = express();
-
-app.use(cors());
-app.use(express.json());
-
+dotenv.config();
+connectDB();
 app.get("/", (req, res) => {
   res.json({
     message: "Courier Tracking API is running",
