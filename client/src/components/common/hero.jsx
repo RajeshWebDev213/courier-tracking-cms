@@ -113,7 +113,7 @@ const Hero = () => {
             >
 
               {/* Stat 1 */}
-              <div className="sm:pr-8">
+              {/* <div className="sm:pr-8">
                 <h3 className="text-2xl md:text-3xl font-bold">
                   500K+
                 </h3>
@@ -121,10 +121,10 @@ const Hero = () => {
                 <p className="mt-1 text-sm text-gray-500">
                   Parcels Delivered
                 </p>
-              </div>
+              </div> */}
 
               {/* Stat 2 */}
-              <div className="sm:px-8">
+              {/* <div className="sm:px-8">
                 <h3 className="text-2xl md:text-3xl font-bold">
                   10K+
                 </h3>
@@ -132,10 +132,10 @@ const Hero = () => {
                 <p className="mt-1 text-sm text-gray-500">
                   Customers
                 </p>
-              </div>
+              </div> */}
 
               {/* Stat 3 */}
-              <div className="sm:pl-8">
+              {/* <div className="sm:pl-8">
                 <h3 className="text-2xl md:text-3xl font-bold">
                   50+
                 </h3>
@@ -143,7 +143,7 @@ const Hero = () => {
                 <p className="mt-1 text-sm text-gray-500">
                   Cities
                 </p>
-              </div>
+              </div> */}
 
             </div>
           </div>

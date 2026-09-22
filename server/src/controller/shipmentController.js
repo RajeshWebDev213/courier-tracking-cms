@@ -75,7 +75,7 @@ export const getShipmentById = async(req,res)=>{
 export const updateShipment = async (req,res)=>{
   try{
      const {id} = req.params;
-    const shipment = await Shipment.findByIdAndUpdate(id,req.body,{new:true,runValidtor:true});
+    const shipment = await Shipment.findByIdAndUpdate(id,req.body,{new:true,runValidators:true});
     if (!shipment) {
       return res.status(404).json({
         message: "Shipment not found"
