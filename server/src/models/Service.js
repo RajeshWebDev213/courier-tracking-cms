@@ -2,10 +2,16 @@ const mongoose = require("mongoose");
 
 const serviceSchema = new mongoose.Schema(
   {
-    title: {
+    name: {
       type: String,
       required: true,
       trim: true,
+    },
+
+    type: {
+      type: String,
+      enum: ["domestic", "express", "business"],
+      required: true,
     },
 
     description: {
@@ -14,14 +20,22 @@ const serviceSchema = new mongoose.Schema(
       trim: true,
     },
 
-    image: {
-      type: String,
-      default: "",
+    price: {
+      type: Number,
+      required: true,
+      min: 0,
     },
 
-    active: {
-      type: Boolean,
-      default: true,
+    estimatedDelivery: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    status: {
+      type: String,
+      enum: ["active", "inactive"],
+      default: "active",
     },
   },
   {
