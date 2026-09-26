@@ -18,6 +18,11 @@ const gallerySchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+
+    cloudinaryPublicId: {
+      type: String,
+      required: true,
+    },
   },
   {
     timestamps: true,

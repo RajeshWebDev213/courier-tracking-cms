@@ -5,6 +5,7 @@ import authRoutes from "./routes/authRoutes.js"
 import shipmentRoutes from "./routes/shipmentRoutes.js"
 import trackingRoutes from "./routes/trackingRoutes.js"
 import serviceRoutes from "./routes/serviceRoutes.js"
+import galleryRoutes from "./routes/galleryRoutes.js"
 
 const app = express();
 app.use(express.json());
@@ -15,5 +16,6 @@ app.use("/api/auth",authRoutes);
 app.use("/api/shipments",shipmentRoutes);
 app.use("/api/tracking",trackingRoutes);
 app.use("/api/services",serviceRoutes);
+app.use("/api/gallery",galleryRoutes)
 
 export default app;

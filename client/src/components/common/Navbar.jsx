@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-
+import logo from "../../assets/icons/logo.png"
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -12,21 +12,30 @@ const Navbar = () => {
     <nav className="absolute top-0 left-0 z-50 w-full bg-white border-b border-gray-100">
       <div className="max-w-7xl mx-auto h-20 px-6 flex items-center justify-between">
 
-        {/* Logo */}
-       <Link
+      
+{/* Logo */}
+<Link
   to="/"
-  className="flex flex-col items-start"
+  className="flex items-center gap-2"
 >
-  <span
-    className="text-xl md:text-2xl tracking-[0.18em] text-black"
-    style={{ fontFamily: "Michroma, sans-serif" }}
-  >
-    PERCELFLOW
-  </span>
+  <img
+    src={logo}
+    alt="PercelFlow Logo"
+    className="h-20 w-20 object-contain"
+  />
 
-  <span className="mt-1 text-[7px] font-medium tracking-[0.3em] text-gray-500 ml-1">
-    COURIER TRACKING SYSTEM
-  </span>
+  <div className="flex flex-col items-start">
+    <span
+      className="text-xl md:text-2xl tracking-[0.18em] text-black"
+      style={{ fontFamily: "Michroma, sans-serif" }}
+    >
+      PERCELFLOW
+    </span>
+
+    <span className="mt-1 text-[7px] font-medium tracking-[0.3em] text-gray-500 ml-1">
+      COURIER TRACKING SYSTEM
+    </span>
+  </div>
 </Link>
 
         {/* Desktop Navigation */}

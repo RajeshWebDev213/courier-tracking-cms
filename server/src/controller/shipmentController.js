@@ -1,10 +1,16 @@
 import Shipment from "../models/Shipment.js";
 import User from "../models/User.js";
+import TrackingUpdate from "../models/TrackingUpdate.js";
+
+const generateTrackingNumber = ()=>{
+  const randomNumber = Math.floor(100000 + Math.random() * 900000)
+  return `CR${randomNumber}`;
+}
 
 export const createShipment = async(req,res)=>{
     try{
       const {
-    trackingNumber,
+    
     customer,
     sender,
     receiver,
@@ -18,9 +24,9 @@ export const createShipment = async(req,res)=>{
   if(!customerExists){
     return res.status(404).json({message:"Customer not found"})
   }
-
+  const trackingNumber = generateTrackingNumber();
   const shipment = await Shipment.create({
-     trackingNumber,
+    trackingNumber,
     customer,
     sender,
     receiver,
