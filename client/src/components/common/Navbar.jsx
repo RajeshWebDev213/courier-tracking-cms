@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import logo from "../../assets/icons/logo.png"
+import logo from "../../assets/icons/logo.png";
+
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -9,74 +10,118 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="absolute top-0 left-0 z-50 w-full bg-white border-b border-gray-100">
-      <div className="max-w-7xl mx-auto h-20 px-6 flex items-center justify-between">
+    <nav className="sticky left-0 top-0 z-50 w-full border-b border-gray-100 bg-white">
+      <div
+        className="
+          mx-auto
+          flex
+          h-16
+          max-w-7xl
+          items-center
+          justify-between
+          px-4
+          sm:h-20
+          sm:px-6
+          lg:px-8
+        "
+      >
 
-      
-{/* Logo */}
-<Link
-  to="/"
-  className="flex items-center gap-2"
->
-  <img
-    src={logo}
-    alt="PercelFlow Logo"
-    className="h-20 w-20 object-contain"
-  />
+        {/* Logo */}
+        <Link
+          to="/"
+          className="flex min-w-0 items-center gap-1.5 sm:gap-2"
+        >
+          {/* Logo Image */}
+          <img
+            src={logo}
+            alt="PercelFlow Logo"
+            className="
+              h-11
+              w-11
+              shrink-0
+              object-contain
+              sm:h-16
+              sm:w-16
+              md:h-20
+              md:w-20
+            "
+          />
 
-  <div className="flex flex-col items-start">
-    <span
-      className="text-xl md:text-2xl tracking-[0.18em] text-black"
-      style={{ fontFamily: "Michroma, sans-serif" }}
-    >
-      PERCELFLOW
-    </span>
+          {/* Brand Name */}
+          <div className="flex min-w-0 flex-col items-start">
+            <span
+              className="
+                whitespace-nowrap
+                text-[15px]
+                tracking-[0.10em]
+                text-black
+                sm:text-xl
+                sm:tracking-[0.14em]
+                md:text-2xl
+                md:tracking-[0.18em]
+              "
+              style={{ fontFamily: "Michroma, sans-serif" }}
+            >
+              PERCELFLOW
+            </span>
 
-    <span className="mt-1 text-[7px] font-medium tracking-[0.3em] text-gray-500 ml-1">
-      COURIER TRACKING SYSTEM
-    </span>
-  </div>
-</Link>
+            <span
+              className="
+                mt-0.5
+                whitespace-nowrap
+                pl-0.5
+                text-[5px]
+                font-medium
+                tracking-[0.18em]
+                text-gray-500
+                sm:mt-1
+                sm:text-[7px]
+                sm:tracking-[0.3em]
+              "
+            >
+              COURIER TRACKING SYSTEM
+            </span>
+          </div>
+        </Link>
 
         {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center gap-8">
+        <div className="hidden items-center gap-8 md:flex">
 
           <Link
             to="/"
-            className="text-sm font-medium text-gray-700 hover:text-black transition"
+            className="text-sm font-medium text-gray-700 transition hover:text-black"
           >
             Home
           </Link>
 
           <Link
             to="/track"
-            className="text-sm font-medium text-gray-700 hover:text-black transition"
+            className="text-sm font-medium text-gray-700 transition hover:text-black"
           >
             Track Parcel
           </Link>
 
           <Link
             to="/shipments"
-            className="text-sm font-medium text-gray-700 hover:text-black transition"
+            className="text-sm font-medium text-gray-700 transition hover:text-black"
           >
             Shipments
           </Link>
 
           <Link
             to="/about"
-            className="text-sm font-medium text-gray-700 hover:text-black transition"
+            className="text-sm font-medium text-gray-700 transition hover:text-black"
           >
             About
           </Link>
-
         </div>
 
         {/* Desktop Right Side */}
-        <div className="hidden md:flex items-center gap-5">
+        <div className="hidden items-center gap-5 md:flex">
 
           <Link
             to="/login"
-            className="text-sm font-medium text-gray-700 hover:text-black transition"
+            className="text-sm font-medium text-gray-700 transition hover:text-black"
           >
             Login
           </Link>
@@ -97,31 +142,30 @@ const Navbar = () => {
           >
             Get Started
           </Link>
-
         </div>
 
         {/* Mobile Menu Button */}
         <button
           onClick={() => setMenuOpen(!menuOpen)}
           className="
-            md:hidden
             flex
-            h-10
-            w-10
+            h-9
+            w-9
+            shrink-0
             items-center
             justify-center
-            rounded-lg
+            rounded-[5px]
             border
             border-gray-200
             bg-white
             text-black
+            md:hidden
           "
           aria-label="Toggle menu"
         >
           {menuOpen ? (
-            /* X */
             <svg
-              className="h-5 w-5"
+              className="h-4 w-4"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -134,9 +178,8 @@ const Navbar = () => {
               />
             </svg>
           ) : (
-            /* Hamburger */
             <svg
-              className="h-5 w-5"
+              className="h-4 w-4"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -150,26 +193,25 @@ const Navbar = () => {
             </svg>
           )}
         </button>
-
       </div>
 
       {/* Mobile Menu */}
       {menuOpen && (
-        <div className="md:hidden border-t border-gray-100 bg-white">
-
-          <div className="px-6 py-5 space-y-1">
+        <div className="border-t border-gray-100 bg-white md:hidden">
+          <div className="space-y-1 px-4 py-4">
 
             <Link
               to="/"
               onClick={closeMenu}
               className="
                 block
-                rounded-lg
+                rounded-[5px]
                 px-4
                 py-3
                 text-sm
                 font-medium
                 text-gray-700
+                transition
                 hover:bg-gray-50
                 hover:text-black
               "
@@ -182,12 +224,13 @@ const Navbar = () => {
               onClick={closeMenu}
               className="
                 block
-                rounded-lg
+                rounded-[5px]
                 px-4
                 py-3
                 text-sm
                 font-medium
                 text-gray-700
+                transition
                 hover:bg-gray-50
                 hover:text-black
               "
@@ -200,12 +243,13 @@ const Navbar = () => {
               onClick={closeMenu}
               className="
                 block
-                rounded-lg
+                rounded-[5px]
                 px-4
                 py-3
                 text-sm
                 font-medium
                 text-gray-700
+                transition
                 hover:bg-gray-50
                 hover:text-black
               "
@@ -218,12 +262,13 @@ const Navbar = () => {
               onClick={closeMenu}
               className="
                 block
-                rounded-lg
+                rounded-[5px]
                 px-4
                 py-3
                 text-sm
                 font-medium
                 text-gray-700
+                transition
                 hover:bg-gray-50
                 hover:text-black
               "
@@ -236,12 +281,13 @@ const Navbar = () => {
               onClick={closeMenu}
               className="
                 block
-                rounded-lg
+                rounded-[5px]
                 px-4
                 py-3
                 text-sm
                 font-medium
                 text-gray-700
+                transition
                 hover:bg-gray-50
                 hover:text-black
               "
@@ -250,7 +296,6 @@ const Navbar = () => {
             </Link>
 
           </div>
-
         </div>
       )}
     </nav>
