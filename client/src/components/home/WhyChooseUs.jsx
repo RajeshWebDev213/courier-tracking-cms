@@ -56,7 +56,7 @@ const WhyChooseUs = () => {
                 group
                 rounded-[5px]
                 border
-                border-gray-200
+                border-gray-300
                 bg-white
                 p-7
                 transition
