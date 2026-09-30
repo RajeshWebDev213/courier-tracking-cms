@@ -109,7 +109,7 @@ const Footer = () => {
                 to="/services"
                 className="text-sm text-gray-600 transition hover:text-black"
               >
-                Services
+                Services 
               </Link>
 
             </div>
@@ -118,44 +118,11 @@ const Footer = () => {
         </div>
 
         {/* Bottom */}
-        <div
-          className="
-            mt-12
-            flex
-            flex-col
-            gap-4
-            border-t
-            border-gray-200
-            pt-6
-            sm:flex-row
-            sm:items-center
-            sm:justify-between
-          "
-        >
-
-          <p className="text-xs text-gray-500">
-            © {new Date().getFullYear()} ParcelFlow. All rights reserved.
-          </p>
-
-          <div className="flex items-center gap-5">
-
-            <Link
-              to="/privacy"
-              className="text-xs text-gray-500 transition hover:text-black"
-            >
-              Privacy Policy
-            </Link>
-
-            <Link
-              to="/terms"
-              className="text-xs text-gray-500 transition hover:text-black"
-            >
-              Terms
-            </Link>
-
-          </div>
-
-        </div>
+<div className="h-1 mt-10 border-t border-gray-200 pt-6 text-center">
+  <p className="text-xs text-gray-500">
+    © {new Date().getFullYear()} ParcelFlow. All rights reserved.
+  </p>
+</div>
 
       </div>
 

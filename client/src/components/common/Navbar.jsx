@@ -70,12 +70,12 @@ const Navbar = () => {
                 mt-0.5
                 whitespace-nowrap
                 pl-0.5
-                text-[5px]
+                text-[6px]
                 font-medium
                 tracking-[0.18em]
                 text-gray-500
                 sm:mt-1
-                sm:text-[7px]
+                sm:text-[8px]
                 sm:tracking-[0.3em]
               "
             >
