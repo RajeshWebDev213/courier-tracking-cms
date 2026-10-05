@@ -3,7 +3,7 @@ import logo from "../../assets/icons/logo.png";
 
 const Footer = () => {
   return (
-    <footer className="w-full border-t border-gray-200 bg-white">
+    <footer className="w-full border-t border-gray-300 bg-white">
 
       <div className="mx-auto max-w-7xl px-6 py-12 lg:px-8">
 
@@ -78,6 +78,12 @@ const Footer = () => {
                 className="text-sm text-gray-600 transition hover:text-black"
               >
                 About
+              </Link>
+               <Link
+                to="/gallery"
+                className="text-sm text-gray-600 transition hover:text-black"
+              >
+                Gallery
               </Link>
 
             </div>
