@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import useAuth from "../../hooks/useAuth";
 
 const Register = () => {
   const navigate = useNavigate();
-
+  const {register} = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -26,37 +27,52 @@ const Register = () => {
     setError("");
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    if (
-      !formData.name ||
-      !formData.email ||
-      !formData.password ||
-      !formData.confirmPassword
-    ) {
-      setError("Please fill in all fields.");
-      return;
-    }
+  setError("");
 
-    if (formData.password.length < 6) {
-      setError("Password must contain at least 6 characters.");
-      return;
-    }
+  if (
+    !formData.name ||
+    !formData.email ||
+    !formData.password ||
+    !formData.confirmPassword
+  ) {
+    setError("Please fill in all fields.");
+    return;
+  }
 
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
+  if (formData.password.length < 6) {
+    setError("Password must contain at least 6 characters.");
+    return;
+  }
 
-    setLoading(true);
+  if (formData.password !== formData.confirmPassword) {
+    setError("Passwords do not match.");
+    return;
+  }
 
-    // UI only - backend will be connected later
-    setTimeout(() => {
-      setLoading(false);
-      navigate("/login");
-    }, 1000);
-  };
+  setLoading(true);
+
+  try {
+    await register({
+      name: formData.name,
+      email: formData.email,
+      password: formData.password,
+    });
+
+    navigate("/login");
+  } catch (error) {
+    console.error(error);
+
+    setError(
+      error.response?.data?.message ||
+        "Registration failed. Please try again."
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <main className="min-h-screen bg-white px-5 py-8 sm:px-6">

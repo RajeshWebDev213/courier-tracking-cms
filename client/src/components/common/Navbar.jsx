@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ChevronDown, Menu, X } from "lucide-react";
 import logo from "../../assets/icons/logo.png";
+import useAuth from "../../hooks/useAuth";
 
 const NAV_LINKS = [
   { to: "/", label: "Home" },
@@ -20,29 +21,14 @@ const PROFILE_LINKS = [
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState(null);
   const [scrolled, setScrolled] = useState(false);
-
   const profileRef = useRef(null);
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { user, isAuthenticated, logout } = useAuth();
 
   // Re-check login on every page change, so the navbar updates right after login/logout
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    setIsLoggedIn(!!token);
-    setUser(null);
-
-    if (token) {
-      try {
-        const stored = localStorage.getItem("user");
-        if (stored) setUser(JSON.parse(stored));
-      } catch {
-        console.error("Failed to parse user data");
-      }
-    }
-
     setMenuOpen(false);
     setProfileOpen(false);
   }, [pathname]);
@@ -67,14 +53,11 @@ const Navbar = () => {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setIsLoggedIn(false);
-    setUser(null);
-    setProfileOpen(false);
-    setMenuOpen(false);
-    navigate("/");
-  };
+  logout();
+  setProfileOpen(false);
+  setMenuOpen(false);
+  navigate("/");
+};
 
   const userName = user?.name || user?.username || user?.fullName || "User";
 
@@ -132,7 +115,7 @@ const Navbar = () => {
 
         {/* Right side */}
         <div className="ml-auto hidden items-center gap-6 md:flex">
-          {!isLoggedIn ? (
+          {!isAuthenticated ? (
             <>
               <Link
                 to="/login"
@@ -188,7 +171,7 @@ const Navbar = () => {
 
                   <button
                     onClick={handleLogout}
-                    className="block w-full border-t border-gray-100 px-4 py-2.5 text-left text-sm font-medium text-black transition hover:bg-gray-50"
+                    className="block w-full border-t border-gray-100 px-4 py-2.5 text-left text-sm font-medium text-red-600 transition"
                   >
                     Logout
                   </button>
@@ -228,7 +211,7 @@ const Navbar = () => {
             ))}
 
             <div className="my-2 border-t border-gray-100 pt-3">
-              {isLoggedIn ? (
+              {isAuthenticated ? (
                 <>
                   <div className="px-4 py-2">
                     <p className="text-sm font-semibold text-black">{userName}</p>
@@ -244,7 +227,7 @@ const Navbar = () => {
                   </Link>
                   <button
                     onClick={handleLogout}
-                    className="block w-full rounded-[5px] px-4 py-3 text-left text-sm font-medium text-gray-600 transition hover:bg-gray-50 hover:text-black"
+                    className="block w-full rounded-[5px] px-4 py-3 text-left text-sm font-medium text-red-600 transition hover:bg-gray-50 hover:text-black"
                   >
                     Logout
                   </button>

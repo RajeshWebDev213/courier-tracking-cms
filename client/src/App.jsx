@@ -29,6 +29,9 @@ import AdminServices from "./pages/Admin/AdminService/AdminServices";
 import AdminGallery from "./pages/Admin/AdminGallery";
 import AdminSettings from "./pages/Admin/AdminSettings";
 
+import ProtectedRoute from "./routes/protectedRoute"
+import AdminRoute from "./routes/AdminRoute";
+
 const App = () => {
   const location = useLocation();
 
@@ -42,7 +45,6 @@ const App = () => {
 
   return (
     <>
-      {/* Public Navbar */}
       {showNavbar && <Navbar />}
 
       {isAuthPage ? (
@@ -58,21 +60,49 @@ const App = () => {
           <Route path="/" element={<Home />} />
           <Route path="/track-parcel" element={<TrackParcel />} />
           <Route path="/shipments" element={<Shipment />} />
-          <Route
-            path="/create-shipment"
-            element={<CreateShipment />}
-          />
-          <Route
-            path="/shipments/:trackingNumber"
-            element={<ShipmentDetails />}
-          />
           <Route path="/gallery" element={<Gallery />} />
           <Route path="/about" element={<About />} />
           <Route path="/services" element={<Services />} />
-          <Route path="/me" element={<Account />} />
 
-          {/* Admin Pages */}
-          <Route path="/admin" element={<AdminLayout />}>
+          {/* Protected User Pages */}
+
+          <Route
+            path="/create-shipment"
+            element={
+              <ProtectedRoute>
+                <CreateShipment />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/shipments/:trackingNumber"
+            element={
+              <ProtectedRoute>
+                <ShipmentDetails />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/me"
+            element={
+              <ProtectedRoute>
+                <Account />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Protected Admin Pages */}
+
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <AdminLayout />
+              </AdminRoute>
+            }
+          >
             <Route index element={<AdminDashboard />} />
 
             <Route
@@ -110,9 +140,20 @@ const App = () => {
               element={<AdminTracking />}
             />
 
-            <Route path="services" element={<AdminServices />}/>
-            <Route path="gallery" element={<AdminGallery />}/>
-            <Route path="settings" element={<AdminSettings />} />
+            <Route
+              path="services"
+              element={<AdminServices />}
+            />
+
+            <Route
+              path="gallery"
+              element={<AdminGallery />}
+            />
+
+            <Route
+              path="settings"
+              element={<AdminSettings />}
+            />
           </Route>
         </Routes>
       )}
