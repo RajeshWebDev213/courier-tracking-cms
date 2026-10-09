@@ -1,42 +1,51 @@
 import { Link } from "react-router-dom";
-import { Search, Package, Eye, MapPin, ArrowRight } from "lucide-react";
+import {
+  Search,
+  Package,
+  Eye,
+  MapPin,
+  ArrowRight,
+} from "lucide-react";
+import { useState } from "react";
+import useAuth from "../../hooks/useAuth";
+import useShipments from "../../hooks/useShipments";
 
 const Shipment = () => {
-  const token = localStorage.getItem("token");
+  const { isAuthenticated } = useAuth();
 
-  // Temporary data for UI
-  const shipments = [
-    {
-      trackingNumber: "CR123456",
-      receiver: "Rahul Kumar",
-      destination: "Chennai",
-      date: "01 Oct 2026",
-      status: "In Transit",
-    },
-    {
-      trackingNumber: "CR123457",
-      receiver: "Arjun Kumar",
-      destination: "Mumbai",
-      date: "30 Sep 2026",
-      status: "Delivered",
-    },
-    {
-      trackingNumber: "CR123458",
-      receiver: "Priya Sharma",
-      destination: "Bangalore",
-      date: "29 Sep 2026",
-      status: "Picked Up",
-    },
-  ];
+  const {
+    shipments,
+    loading,
+    error,
+  } = useShipments();
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+
+  // ==============================
+  // Filter Shipments
+  // ==============================
+
+  const filteredShipments = shipments.filter((shipment) => {
+    const matchesSearch = shipment.trackingNumber
+      ?.toLowerCase()
+      .includes(searchTerm.toLowerCase());
+
+    const matchesStatus =
+      !statusFilter ||
+      shipment.status?.toLowerCase() === statusFilter.toLowerCase();
+
+    return matchesSearch && matchesStatus;
+  });
 
   // ==============================
   // Guest User
   // ==============================
-  if (!token) {
+
+  if (!isAuthenticated) {
     return (
       <main className="min-h-screen bg-white px-6 py-12">
         <div className="mx-auto flex min-h-[70vh] max-w-7xl items-center justify-center">
-
           <div className="w-full max-w-md text-center">
 
             {/* Icon */}
@@ -77,9 +86,23 @@ const Shipment = () => {
               </Link>
 
             </div>
-
           </div>
+        </div>
+      </main>
+    );
+  }
 
+  // ==============================
+  // Loading
+  // ==============================
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-white px-6 py-12">
+        <div className="mx-auto flex min-h-[70vh] max-w-7xl items-center justify-center">
+          <p className="text-sm text-gray-500">
+            Loading shipments...
+          </p>
         </div>
       </main>
     );
@@ -88,6 +111,7 @@ const Shipment = () => {
   // ==============================
   // Logged-in User
   // ==============================
+
   return (
     <main className="min-h-screen bg-white px-6 py-12">
       <div className="mx-auto max-w-7xl">
@@ -118,9 +142,17 @@ const Shipment = () => {
 
         </div>
 
+        {/* Error */}
+        {error && (
+          <div className="mt-6 rounded-[5px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            {error}
+          </div>
+        )}
+
         {/* Search & Filter */}
         <div className="mt-10 flex flex-col gap-3 sm:flex-row">
 
+          {/* Search */}
           <div className="relative flex-1">
 
             <Search
@@ -131,209 +163,287 @@ const Shipment = () => {
             <input
               type="text"
               placeholder="Search by tracking number..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full rounded-[5px] border border-gray-300 py-3 pl-11 pr-4 text-sm outline-none focus:border-black"
             />
 
           </div>
 
+          {/* Status Filter */}
           <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
             className="rounded-[5px] border border-gray-300 bg-white px-4 py-3 text-sm outline-none focus:border-black"
           >
             <option value="">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="picked-up">Picked Up</option>
-            <option value="in-transit">In Transit</option>
-            <option value="out-for-delivery">Out for Delivery</option>
-            <option value="delivered">Delivered</option>
+            <option value="Booked">Booked</option>
+            <option value="Picked Up">Picked Up</option>
+            <option value="In Transit">In Transit</option>
+            <option value="Out for Delivery">
+              Out for Delivery
+            </option>
+            <option value="Delivered">Delivered</option>
+            <option value="Cancelled">Cancelled</option>
           </select>
 
         </div>
 
-        {/* Desktop Table */}
-        <div className="mt-6 hidden overflow-hidden rounded-[5px] border border-gray-200 md:block">
+        {/* No Shipments */}
+        {!error && filteredShipments.length === 0 && (
+          <div className="mt-10 rounded-[5px] border border-gray-200 px-6 py-16 text-center">
+            <Package
+              size={40}
+              className="mx-auto text-gray-400"
+            />
 
-          <table className="w-full text-left">
+            <h2 className="mt-4 text-lg font-semibold text-black">
+              No shipments found
+            </h2>
 
-            <thead className="border-b border-gray-200 bg-gray-50">
-              <tr>
+            <p className="mt-2 text-sm text-gray-500">
+              {shipments.length === 0
+                ? "You haven't created any shipments yet."
+                : "No shipments match your search or filter."}
+            </p>
 
-                <th className="px-6 py-4 text-sm font-medium text-gray-600">
-                  Tracking Number
-                </th>
+            {shipments.length === 0 && (
+              <Link
+                to="/create-shipment"
+                className="mt-5 inline-block rounded-[5px] bg-black px-5 py-3 text-sm font-medium text-white hover:bg-gray-800"
+              >
+                Create Shipment
+              </Link>
+            )}
+          </div>
+        )}
 
-                <th className="px-6 py-4 text-sm font-medium text-gray-600">
-                  Receiver
-                </th>
+        {/* ==============================
+            Desktop Table
+        ============================== */}
 
-                <th className="px-6 py-4 text-sm font-medium text-gray-600">
-                  Destination
-                </th>
+        {filteredShipments.length > 0 && (
+          <div className="mt-6 hidden overflow-hidden rounded-[5px] border border-gray-200 md:block">
 
-                <th className="px-6 py-4 text-sm font-medium text-gray-600">
-                  Date
-                </th>
+            <table className="w-full text-left">
 
-                <th className="px-6 py-4 text-sm font-medium text-gray-600">
-                  Status
-                </th>
+              <thead className="border-b border-gray-200 bg-gray-50">
+                <tr>
 
-                <th className="px-6 py-4 text-sm font-medium text-gray-600">
-                  Action
-                </th>
+                  <th className="px-6 py-4 text-sm font-medium text-gray-600">
+                    Tracking Number
+                  </th>
 
-              </tr>
-            </thead>
+                  <th className="px-6 py-4 text-sm font-medium text-gray-600">
+                    Receiver
+                  </th>
 
-            <tbody>
+                  <th className="px-6 py-4 text-sm font-medium text-gray-600">
+                    Destination
+                  </th>
 
-              {shipments.map((shipment) => (
-                <tr
-                  key={shipment.trackingNumber}
-                  className="border-b border-gray-100 last:border-0"
-                >
+                  <th className="px-6 py-4 text-sm font-medium text-gray-600">
+                    Date
+                  </th>
 
-                  <td className="px-6 py-5">
-                    <div className="flex items-center gap-2">
-                      <Package size={17} />
+                  <th className="px-6 py-4 text-sm font-medium text-gray-600">
+                    Status
+                  </th>
 
-                      <span className="font-medium text-black">
-                        {shipment.trackingNumber}
-                      </span>
-                    </div>
-                  </td>
-
-                  <td className="px-6 py-5 text-sm text-gray-600">
-                    {shipment.receiver}
-                  </td>
-
-                  <td className="px-6 py-5">
-
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <MapPin size={15} />
-                      {shipment.destination}
-                    </div>
-
-                  </td>
-
-                  <td className="px-6 py-5 text-sm text-gray-600">
-                    {shipment.date}
-                  </td>
-
-                  <td className="px-6 py-5">
-
-                    <span className="rounded-[5px] border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-black">
-                      {shipment.status}
-                    </span>
-
-                  </td>
-
-                  <td className="px-6 py-5">
-
-                    <div className="flex items-center gap-3">
-
-                      <Link
-                        to={`/shipments/${shipment.trackingNumber}`}
-                        className="flex items-center gap-1.5 text-sm font-medium text-black hover:underline"
-                      >
-                        <Eye size={16} />
-                        View
-                      </Link>
-
-                      <Link
-                        to={`/track-parcel?tracking=${shipment.trackingNumber}`}
-                        className="rounded-[5px] bg-black px-3 py-2 text-xs font-medium text-white hover:bg-gray-800"
-                      >
-                        Track
-                      </Link>
-
-                    </div>
-
-                  </td>
+                  <th className="px-6 py-4 text-sm font-medium text-gray-600">
+                    Action
+                  </th>
 
                 </tr>
-              ))}
+              </thead>
 
-            </tbody>
+              <tbody>
 
-          </table>
+                {filteredShipments.map((shipment) => (
+                  <tr
+                    key={shipment._id || shipment.trackingNumber}
+                    className="border-b border-gray-100 last:border-0"
+                  >
 
-        </div>
+                    {/* Tracking Number */}
+                    <td className="px-6 py-5">
+                      <div className="flex items-center gap-2">
 
-        {/* Mobile Cards */}
-        <div className="mt-6 space-y-4 md:hidden">
+                        <Package size={17} />
 
-          {shipments.map((shipment) => (
-            <div
-              key={shipment.trackingNumber}
-              className="rounded-[5px] border border-gray-200 p-5"
-            >
+                        <span className="font-medium text-black">
+                          {shipment.trackingNumber}
+                        </span>
 
-              <div className="flex items-start justify-between gap-3">
+                      </div>
+                    </td>
 
-                <div>
-                  <p className="text-xs text-gray-500">
-                    Tracking Number
-                  </p>
+                    {/* Receiver */}
+                    <td className="px-6 py-5 text-sm text-gray-600">
+                      {shipment.receiver?.name || "-"}
+                    </td>
 
-                  <h3 className="mt-1 font-semibold text-black">
-                    {shipment.trackingNumber}
-                  </h3>
+                    {/* Destination */}
+                    <td className="px-6 py-5">
+
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <MapPin size={15} />
+
+                        <span>
+                          {shipment.receiver?.city || "-"}
+                          {shipment.receiver?.state
+                            ? `, ${shipment.receiver.state}`
+                            : ""}
+                        </span>
+                      </div>
+
+                    </td>
+
+                    {/* Date */}
+                    <td className="px-6 py-5 text-sm text-gray-600">
+                      {shipment.createdAt
+                        ? new Date(
+                            shipment.createdAt
+                          ).toLocaleDateString()
+                        : "-"}
+                    </td>
+
+                    {/* Status */}
+                    <td className="px-6 py-5">
+
+                      <span className="rounded-[5px] border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-black">
+                        {shipment.status || "Booked"}
+                      </span>
+
+                    </td>
+
+                    {/* Actions */}
+                    <td className="px-6 py-5">
+
+                      <div className="flex items-center gap-3">
+
+                        <Link
+                          to={`/shipments/${shipment.trackingNumber}`}
+                          className="flex items-center gap-1.5 text-sm font-medium text-black hover:underline"
+                        >
+                          <Eye size={16} />
+                          View
+                        </Link>
+
+                        <Link
+                          to={`/track-parcel?tracking=${shipment.trackingNumber}`}
+                          className="rounded-[5px] bg-black px-3 py-2 text-xs font-medium text-white hover:bg-gray-800"
+                        >
+                          Track
+                        </Link>
+
+                      </div>
+
+                    </td>
+
+                  </tr>
+                ))}
+
+              </tbody>
+
+            </table>
+
+          </div>
+        )}
+
+        {/* ==============================
+            Mobile Cards
+        ============================== */}
+
+        {filteredShipments.length > 0 && (
+          <div className="mt-6 space-y-4 md:hidden">
+
+            {filteredShipments.map((shipment) => (
+              <div
+                key={shipment._id || shipment.trackingNumber}
+                className="rounded-[5px] border border-gray-200 p-5"
+              >
+
+                {/* Card Header */}
+                <div className="flex items-start justify-between gap-3">
+
+                  <div>
+                    <p className="text-xs text-gray-500">
+                      Tracking Number
+                    </p>
+
+                    <h3 className="mt-1 font-semibold text-black">
+                      {shipment.trackingNumber}
+                    </h3>
+                  </div>
+
+                  <span className="rounded-[5px] border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-black">
+                    {shipment.status || "Booked"}
+                  </span>
+
                 </div>
 
-                <span className="rounded-[5px] border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-black">
-                  {shipment.status}
-                </span>
+                {/* Shipment Details */}
+                <div className="mt-5 space-y-3 text-sm">
+
+                  {/* Receiver */}
+                  <p className="text-gray-600">
+                    <span className="font-medium text-black">
+                      Receiver:
+                    </span>{" "}
+                    {shipment.receiver?.name || "-"}
+                  </p>
+
+                  {/* Destination */}
+                  <p className="text-gray-600">
+                    <span className="font-medium text-black">
+                      Destination:
+                    </span>{" "}
+                    {shipment.receiver?.city || "-"}
+                    {shipment.receiver?.state
+                      ? `, ${shipment.receiver.state}`
+                      : ""}
+                  </p>
+
+                  {/* Date */}
+                  <p className="text-gray-600">
+                    <span className="font-medium text-black">
+                      Date:
+                    </span>{" "}
+                    {shipment.createdAt
+                      ? new Date(
+                          shipment.createdAt
+                        ).toLocaleDateString()
+                      : "-"}
+                  </p>
+
+                </div>
+
+                {/* Actions */}
+                <div className="mt-5 flex gap-3 border-t border-gray-100 pt-4">
+
+                  <Link
+                    to={`/shipments/${shipment.trackingNumber}`}
+                    className="flex flex-1 items-center justify-center gap-2 rounded-[5px] border border-gray-300 px-4 py-2.5 text-sm font-medium text-black"
+                  >
+                    <Eye size={16} />
+                    View
+                  </Link>
+
+                  <Link
+                    to={`/track-parcel?tracking=${shipment.trackingNumber}`}
+                    className="flex flex-1 items-center justify-center rounded-[5px] bg-black px-4 py-2.5 text-sm font-medium text-white"
+                  >
+                    Track
+                  </Link>
+
+                </div>
 
               </div>
+            ))}
 
-              <div className="mt-5 space-y-3 text-sm">
-
-                <p className="text-gray-600">
-                  <span className="font-medium text-black">
-                    Receiver:
-                  </span>{" "}
-                  {shipment.receiver}
-                </p>
-
-                <p className="text-gray-600">
-                  <span className="font-medium text-black">
-                    Destination:
-                  </span>{" "}
-                  {shipment.destination}
-                </p>
-
-                <p className="text-gray-600">
-                  <span className="font-medium text-black">
-                    Date:
-                  </span>{" "}
-                  {shipment.date}
-                </p>
-
-              </div>
-
-              <div className="mt-5 flex gap-3 border-t border-gray-100 pt-4">
-
-                <Link
-                  to={`/shipments/${shipment.trackingNumber}`}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-[5px] border border-gray-300 px-4 py-2.5 text-sm font-medium text-black"
-                >
-                  <Eye size={16} />
-                  View
-                </Link>
-
-                <Link
-                  to={`/track-parcel?tracking=${shipment.trackingNumber}`}
-                  className="flex flex-1 items-center justify-center rounded-[5px] bg-black px-4 py-2.5 text-sm font-medium text-white"
-                >
-                  Track
-                </Link>
-
-              </div>
-
-            </div>
-          ))}
-
-        </div>
+          </div>
+        )}
 
       </div>
     </main>

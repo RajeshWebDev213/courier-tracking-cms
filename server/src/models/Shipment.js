@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const shipmentSchema = new mongoose.Schema(
   {
@@ -33,6 +33,24 @@ const shipmentSchema = new mongoose.Schema(
         required: true,
         trim: true,
       },
+
+      city: {
+        type: String,
+        required: true,
+        trim: true,
+      },
+
+      state: {
+        type: String,
+        required: true,
+        trim: true,
+      },
+
+      pincode: {
+        type: String,
+        required: true,
+        trim: true,
+      },
     },
 
     receiver: {
@@ -53,9 +71,27 @@ const shipmentSchema = new mongoose.Schema(
         required: true,
         trim: true,
       },
+
+      city: {
+        type: String,
+        required: true,
+        trim: true,
+      },
+
+      state: {
+        type: String,
+        required: true,
+        trim: true,
+      },
+
+      pincode: {
+        type: String,
+        required: true,
+        trim: true,
+      },
     },
 
-    parcelDetails: {
+    packageType: {
       type: String,
       required: true,
       trim: true,
@@ -67,9 +103,8 @@ const shipmentSchema = new mongoose.Schema(
       min: 0,
     },
 
-    deliveryAddress: {
+    description: {
       type: String,
-      required: true,
       trim: true,
     },
 
@@ -91,4 +126,4 @@ const shipmentSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("Shipment", shipmentSchema);
+export default mongoose.model("Shipment", shipmentSchema);

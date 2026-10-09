@@ -7,6 +7,7 @@ import {
   User,
   MapPin,
 } from "lucide-react";
+import { createShipment } from "../../services/ShipmentServices";
 
 const CreateShipment = () => {
   const navigate = useNavigate();
@@ -46,41 +47,28 @@ const CreateShipment = () => {
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    try {
-      setLoading(true);
-      setError("");
+  try {
+    setLoading(true);
+    setError("");
 
-      const response = await fetch(
-        "http://localhost:5000/api/shipments",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
-        }
-      );
+    await createShipment(formData);
 
-      const data = await response.json();
+    navigate("/shipments");
+  } catch (err) {
+    console.error(err);
 
-      if (!response.ok) {
-        throw new Error(
-          data.message || "Failed to create shipment"
-        );
-      }
-
-      navigate("/shipments");
-    } catch (err) {
-      setError(
-        err.message || "Something went wrong. Please try again."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+    setError(
+      err.response?.data?.message ||
+        err.message ||
+        "Failed to create shipment"
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Reusable input class
   const inputClass =

@@ -429,7 +429,7 @@ const AdminServices = () => {
 
                 <button
                   type="submit"
-                  className="w-full rounded-[5px] bg-red px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800 sm:w-auto"
+                  className="w-full rounded-[5px] bg-red px-5 py-2.5 text-sm font-medium text-white bg-black sm:w-auto"
                 >
                   {editingService
                     ? "Update Service"

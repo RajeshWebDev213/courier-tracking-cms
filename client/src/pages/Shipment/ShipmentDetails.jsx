@@ -1,347 +1,349 @@
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   Package,
   User,
-  MapPin,
   Phone,
+  MapPin,
   Calendar,
+  Weight,
 } from "lucide-react";
+import { getShipmentById } from "../../services/ShipmentServices";
 
 const ShipmentDetails = () => {
-  const { id } = useParams();
+  const { trackingNumber } = useParams();
 
-  // Temporary shipment data
-  // Later replace this with GET /api/shipments/:id
-  const shipment = {
-    trackingNumber: "CR123456",
-    status: "In Transit",
-    createdAt: "01 Oct 2026",
+  const [shipment, setShipment] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-    sender: {
-      name: "Rahul Kumar",
-      phone: "9876543210",
-      address: "Madhapur",
-      city: "Hyderabad",
-      state: "Telangana",
-      pincode: "500081",
-    },
+  useEffect(() => {
+    const fetchShipment = async () => {
+      try {
+        setLoading(true);
+        setError("");
 
-    receiver: {
-      name: "Arjun Kumar",
-      phone: "9876543211",
-      address: "T Nagar",
-      city: "Chennai",
-      state: "Tamil Nadu",
-      pincode: "600017",
-    },
+        const response = await getShipmentById(trackingNumber);
 
-    package: {
-      type: "Parcel",
-      weight: "2.5 kg",
-      description: "Electronic accessories",
-    },
-  };
+        setShipment(response.shipment);
+      } catch (error) {
+        console.error("Shipment details error:", error);
+
+        setError(
+          error.response?.data?.message ||
+            "Failed to fetch shipment details"
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (trackingNumber) {
+      fetchShipment();
+    } else {
+      setLoading(false);
+      setError("Tracking Number is missing");
+    }
+  }, [trackingNumber]);
+
+  // Loading
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-white px-6 py-12">
+        <div className="mx-auto flex min-h-[70vh] max-w-5xl items-center justify-center">
+          <p className="text-sm text-gray-500">
+            Loading shipment details...
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  // Error
+  if (error) {
+    return (
+      <main className="min-h-screen bg-white px-6 py-12">
+        <div className="mx-auto flex min-h-[70vh] max-w-5xl flex-col items-center justify-center">
+          <Package size={40} className="text-gray-400" />
+
+          <p className="mt-4 text-sm text-red-500">
+            {error}
+          </p>
+
+          <Link
+            to="/shipments"
+            className="mt-5 rounded-[5px] bg-black px-5 py-3 text-sm font-medium text-white hover:bg-gray-800"
+          >
+            Back to Shipments
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
+  // Shipment not found
+  if (!shipment) {
+    return (
+      <main className="min-h-screen bg-white px-6 py-12">
+        <div className="mx-auto flex min-h-[70vh] items-center justify-center">
+          <p className="text-sm text-gray-500">
+            Shipment not found.
+          </p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-white px-6 py-12">
       <div className="mx-auto max-w-5xl">
 
-        {/* ================= HEADER ================= */}
-        <div className="mb-8">
+        {/* Back */}
+        <Link
+          to="/shipments"
+          className="mb-8 flex w-fit items-center gap-2 text-sm text-gray-500 transition hover:text-black"
+        >
+          <ArrowLeft size={16} />
+          Back to Shipments
+        </Link>
 
-          <Link
-            to="/shipments"
-            className="mb-5 inline-flex items-center gap-2 text-sm text-gray-500 hover:text-black"
-          >
-            <ArrowLeft size={16} />
-            Back to Shipments
-          </Link>
+        {/* Header */}
+        <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-widest text-gray-500">
+              Shipment
+            </p>
 
-          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+            <h1 className="mt-2 text-3xl font-bold text-black">
+              Shipment Details
+            </h1>
 
-            <div>
-              <p className="text-sm font-medium uppercase tracking-widest text-gray-500">
-                Shipment Details
-              </p>
-
-              <h1 className="mt-2 text-3xl font-bold text-black">
-                {shipment.trackingNumber}
-              </h1>
+            <div className="mt-3 flex items-center gap-2 text-sm text-gray-500">
+              <Package size={16} />
+              <span>{shipment.trackingNumber}</span>
             </div>
-
-            <span className="w-fit rounded-[5px] border border-gray-200 bg-gray-50 px-4 py-2 text-sm font-medium text-black">
-              {shipment.status}
-            </span>
-
           </div>
 
+          {/* Status */}
+          <span className="w-fit rounded-[5px] border border-gray-200 bg-gray-50 px-4 py-2 text-sm font-medium text-black">
+            {shipment.status || "Booked"}
+          </span>
         </div>
 
-        {/* ================= BASIC INFORMATION ================= */}
-        <div className="rounded-[5px] border border-gray-200 p-6 sm:p-8">
+        {/* Main Content */}
+        <div className="mt-10 space-y-6">
 
-          <div className="flex items-center gap-3">
+          {/* Sender & Receiver */}
+          <div className="grid gap-6 md:grid-cols-2">
 
-            <div className="flex h-10 w-10 items-center justify-center rounded-[5px] bg-gray-100">
-              <Package size={19} />
+            {/* Sender */}
+            <div className="rounded-[5px] border border-gray-200 p-6">
+              <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-50">
+                  <User size={17} />
+                </div>
+
+                <div>
+                  <h2 className="font-semibold text-black">
+                    Sender
+                  </h2>
+
+                  <p className="text-xs text-gray-500">
+                    Pickup details
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 space-y-4 text-sm">
+
+                <div>
+                  <p className="text-xs text-gray-400">
+                    Name
+                  </p>
+                  <p className="mt-1 text-gray-700">
+                    {shipment.sender?.name || "-"}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-gray-400">
+                    Phone
+                  </p>
+
+                  <div className="mt-1 flex items-center gap-2 text-gray-700">
+                    <Phone size={14} />
+                    {shipment.sender?.phone || "-"}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs text-gray-400">
+                    Address
+                  </p>
+
+                  <div className="mt-1 flex items-start gap-2 text-gray-700">
+                    <MapPin size={14} className="mt-0.5 shrink-0" />
+
+                    <span>
+                      {shipment.sender?.address || "-"},{" "}
+                      {shipment.sender?.city || "-"},{" "}
+                      {shipment.sender?.state || "-"}{" "}
+                      {shipment.sender?.pincode || ""}
+                    </span>
+                  </div>
+                </div>
+
+              </div>
             </div>
 
-            <div>
-              <h2 className="font-semibold text-black">
-                Shipment Information
-              </h2>
+            {/* Receiver */}
+            <div className="rounded-[5px] border border-gray-200 p-6">
+              <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-50">
+                  <User size={17} />
+                </div>
 
-              <p className="text-sm text-gray-500">
-                Basic information about this shipment.
-              </p>
-            </div>
+                <div>
+                  <h2 className="font-semibold text-black">
+                    Receiver
+                  </h2>
 
-          </div>
+                  <p className="text-xs text-gray-500">
+                    Delivery details
+                  </p>
+                </div>
+              </div>
 
-          <div className="mt-7 grid gap-5 sm:grid-cols-3">
+              <div className="mt-5 space-y-4 text-sm">
 
-            <div>
-              <p className="text-sm text-gray-500">
-                Tracking Number
-              </p>
+                <div>
+                  <p className="text-xs text-gray-400">
+                    Name
+                  </p>
 
-              <p className="mt-1 font-medium text-black">
-                {shipment.trackingNumber}
-              </p>
-            </div>
+                  <p className="mt-1 text-gray-700">
+                    {shipment.receiver?.name || "-"}
+                  </p>
+                </div>
 
-            <div>
-              <p className="text-sm text-gray-500">
-                Status
-              </p>
+                <div>
+                  <p className="text-xs text-gray-400">
+                    Phone
+                  </p>
 
-              <p className="mt-1 font-medium text-black">
-                {shipment.status}
-              </p>
-            </div>
+                  <div className="mt-1 flex items-center gap-2 text-gray-700">
+                    <Phone size={14} />
+                    {shipment.receiver?.phone || "-"}
+                  </div>
+                </div>
 
-            <div>
-              <p className="text-sm text-gray-500">
-                Shipment Date
-              </p>
+                <div>
+                  <p className="text-xs text-gray-400">
+                    Address
+                  </p>
 
-              <p className="mt-1 flex items-center gap-2 font-medium text-black">
-                <Calendar size={16} />
-                {shipment.createdAt}
-              </p>
-            </div>
+                  <div className="mt-1 flex items-start gap-2 text-gray-700">
+                    <MapPin size={14} className="mt-0.5 shrink-0" />
 
-          </div>
+                    <span>
+                      {shipment.receiver?.address || "-"},{" "}
+                      {shipment.receiver?.city || "-"},{" "}
+                      {shipment.receiver?.state || "-"}{" "}
+                      {shipment.receiver?.pincode || ""}
+                    </span>
+                  </div>
+                </div>
 
-        </div>
-
-        {/* ================= SENDER ================= */}
-        <div className="mt-6 rounded-[5px] border border-gray-200 p-6 sm:p-8">
-
-          <div className="flex items-center gap-3">
-
-            <div className="flex h-10 w-10 items-center justify-center rounded-[5px] bg-gray-100">
-              <User size={19} />
-            </div>
-
-            <div>
-              <h2 className="font-semibold text-black">
-                Sender Information
-              </h2>
-
-              <p className="text-sm text-gray-500">
-                Pickup information.
-              </p>
-            </div>
-
-          </div>
-
-          <div className="mt-7 grid gap-5 sm:grid-cols-2">
-
-            <div>
-              <p className="text-sm text-gray-500">
-                Name
-              </p>
-
-              <p className="mt-1 font-medium text-black">
-                {shipment.sender.name}
-              </p>
-            </div>
-
-            <div>
-              <p className="text-sm text-gray-500">
-                Phone
-              </p>
-
-              <p className="mt-1 flex items-center gap-2 font-medium text-black">
-                <Phone size={16} />
-                {shipment.sender.phone}
-              </p>
-            </div>
-
-            <div className="sm:col-span-2">
-              <p className="text-sm text-gray-500">
-                Address
-              </p>
-
-              <p className="mt-1 flex items-start gap-2 font-medium text-black">
-                <MapPin size={16} className="mt-0.5 shrink-0" />
-
-                <span>
-                  {shipment.sender.address},{" "}
-                  {shipment.sender.city},{" "}
-                  {shipment.sender.state} -{" "}
-                  {shipment.sender.pincode}
-                </span>
-              </p>
-            </div>
-
-          </div>
-
-        </div>
-
-        {/* ================= RECEIVER ================= */}
-        <div className="mt-6 rounded-[5px] border border-gray-200 p-6 sm:p-8">
-
-          <div className="flex items-center gap-3">
-
-            <div className="flex h-10 w-10 items-center justify-center rounded-[5px] bg-gray-100">
-              <MapPin size={19} />
-            </div>
-
-            <div>
-              <h2 className="font-semibold text-black">
-                Receiver Information
-              </h2>
-
-              <p className="text-sm text-gray-500">
-                Delivery information.
-              </p>
+              </div>
             </div>
 
           </div>
 
-          <div className="mt-7 grid gap-5 sm:grid-cols-2">
+          {/* Package Details */}
+          <div className="rounded-[5px] border border-gray-200 p-6">
 
-            <div>
-              <p className="text-sm text-gray-500">
-                Name
-              </p>
+            <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-50">
+                <Package size={17} />
+              </div>
 
-              <p className="mt-1 font-medium text-black">
-                {shipment.receiver.name}
-              </p>
+              <div>
+                <h2 className="font-semibold text-black">
+                  Package Details
+                </h2>
+
+                <p className="text-xs text-gray-500">
+                  Shipment information
+                </p>
+              </div>
             </div>
 
-            <div>
-              <p className="text-sm text-gray-500">
-                Phone
-              </p>
+            <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
 
-              <p className="mt-1 flex items-center gap-2 font-medium text-black">
-                <Phone size={16} />
-                {shipment.receiver.phone}
-              </p>
+              <div>
+                <p className="text-xs text-gray-400">
+                  Package Type
+                </p>
+
+                <p className="mt-1 text-sm font-medium text-gray-700">
+                  {shipment.packageType || "-"}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs text-gray-400">
+                  Weight
+                </p>
+
+                <div className="mt-1 flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <Weight size={14} />
+                  {shipment.weight || "-"} kg
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs text-gray-400">
+                  Created Date
+                </p>
+
+                <div className="mt-1 flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <Calendar size={14} />
+
+                  {shipment.createdAt
+                    ? new Date(
+                        shipment.createdAt
+                      ).toLocaleDateString()
+                    : "-"}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs text-gray-400">
+                  Status
+                </p>
+
+                <p className="mt-1 text-sm font-medium text-gray-700">
+                  {shipment.status || "Booked"}
+                </p>
+              </div>
+
             </div>
 
-            <div className="sm:col-span-2">
-              <p className="text-sm text-gray-500">
-                Address
-              </p>
-
-              <p className="mt-1 flex items-start gap-2 font-medium text-black">
-                <MapPin size={16} className="mt-0.5 shrink-0" />
-
-                <span>
-                  {shipment.receiver.address},{" "}
-                  {shipment.receiver.city},{" "}
-                  {shipment.receiver.state} -{" "}
-                  {shipment.receiver.pincode}
-                </span>
-              </p>
-            </div>
-
-          </div>
-
-        </div>
-
-        {/* ================= PACKAGE ================= */}
-        <div className="mt-6 rounded-[5px] border border-gray-200 p-6 sm:p-8">
-
-          <div className="flex items-center gap-3">
-
-            <div className="flex h-10 w-10 items-center justify-center rounded-[5px] bg-gray-100">
-              <Package size={19} />
-            </div>
-
-            <div>
-              <h2 className="font-semibold text-black">
-                Package Information
-              </h2>
-
-              <p className="text-sm text-gray-500">
-                Details about the package.
-              </p>
-            </div>
-
-          </div>
-
-          <div className="mt-7 grid gap-5 sm:grid-cols-3">
-
-            <div>
-              <p className="text-sm text-gray-500">
-                Package Type
-              </p>
-
-              <p className="mt-1 font-medium text-black">
-                {shipment.package.type}
-              </p>
-            </div>
-
-            <div>
-              <p className="text-sm text-gray-500">
-                Weight
-              </p>
-
-              <p className="mt-1 font-medium text-black">
-                {shipment.package.weight}
-              </p>
-            </div>
-
-            <div>
-              <p className="text-sm text-gray-500">
+            {/* Description */}
+            <div className="mt-6 border-t border-gray-100 pt-5">
+              <p className="text-xs text-gray-400">
                 Description
               </p>
 
-              <p className="mt-1 font-medium text-black">
-                {shipment.package.description}
+              <p className="mt-1 text-sm leading-6 text-gray-600">
+                {shipment.description || "No description provided."}
               </p>
             </div>
 
           </div>
 
         </div>
-
-        {/* ================= ACTIONS ================= */}
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
-
-          <Link
-            to="/shipments"
-            className="rounded-[5px] border border-gray-300 px-6 py-3 text-center text-sm font-medium text-black hover:bg-gray-50"
-          >
-            Back to Shipments
-          </Link>
-
-          <Link
-            to={`/track-parcel?tracking=${shipment.trackingNumber}`}
-            className="rounded-[5px] bg-black px-6 py-3 text-center text-sm font-medium text-white hover:bg-gray-800"
-          >
-            Track Shipment
-          </Link>
-
-        </div>
-
       </div>
     </main>
   );

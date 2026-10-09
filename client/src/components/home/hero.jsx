@@ -1,7 +1,13 @@
 import { Link } from "react-router-dom";
 import heroImage from "../../assets/images/hero.jpg";
+import useAuth from "../../hooks/useAuth";
 
 const Hero = () => {
+  const { user, isAuthenticated } = useAuth();
+
+  const userName =
+    user?.name || user?.username || user?.fullName || "User";
+
   return (
     <section className="w-full bg-white text-black">
       <div className="mx-auto flex min-h-[calc(100vh-80px)] max-w-7xl items-center px-6 lg:px-8">
@@ -10,80 +16,52 @@ const Hero = () => {
           {/* Left Content */}
           <div className="w-full">
 
-            <h1
-              className="
-                text-4xl
-                leading-tight
-                tracking-tight
-                sm:text-5xl
-                md:text-6xl
-                lg:text-7xl
-              "
-            >
+            {isAuthenticated && (
+              <p className="mb-4 text-sm font-medium text-gray-500">
+                Welcome back, {userName.split(" ")[0]}
+              </p>
+            )}
+
+            <h1 className="text-4xl leading-tight tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
               Track Every{" "}
               <span className="font-semibold">Parcel.</span>{" "}
               Anywhere.
             </h1>
 
-            <p
-              className="
-                mt-5
-                max-w-2xl
-                text-base
-                leading-relaxed
-                text-gray-600
-                sm:text-lg
-                md:text-xl
-              "
-            >
+            <p className="mt-5 max-w-2xl text-base leading-relaxed text-gray-600 sm:text-lg md:text-xl">
               Track shipments in real time, manage deliveries, and stay
               connected from pickup to doorstep.
             </p>
 
             <div className="mt-7 flex flex-col gap-4 sm:flex-row">
 
+              {/* Track */}
               <Link
-                to="/track"
-                className="
-                  inline-flex
-                  items-center
-                  justify-center
-                  rounded-[5px]
-                  bg-black
-                  px-7
-                  py-3.5
-                  font-semibold
-                  text-white
-                  transition
-                  duration-300
-                  hover:bg-gray-800
-                "
+                to="/track-parcel"
+                className="inline-flex items-center justify-center rounded-[5px] bg-black px-7 py-3.5 font-semibold text-white transition duration-300 hover:bg-gray-800"
               >
                 Track Your Parcel
                 <span className="ml-2">→</span>
               </Link>
 
-              <Link
-                to="/signup"
-                className="
-                  inline-flex
-                  items-center
-                  justify-center
-                  rounded-[5px]
-                  border
-                  border-gray-300
-                  bg-white
-                  px-7
-                  py-3.5
-                  font-medium
-                  text-black
-                  transition
-                  duration-300
-                  hover:bg-gray-100
-                "
-              >
-                Get Started
-              </Link>
+              {/* Logged-in user */}
+              {isAuthenticated ? (
+                <Link
+                  to="/create-shipment"
+                  className="inline-flex items-center justify-center rounded-[5px] border border-gray-300 bg-white px-7 py-3.5 font-medium text-black transition hover:bg-gray-100"
+                >
+                  Create Shipment
+                  <span className="ml-2">→</span>
+                </Link>
+              ) : (
+                <Link
+                  to="/signup"
+                  className="inline-flex items-center justify-center rounded-[5px] border border-gray-300 bg-white px-7 py-3.5 font-medium text-black transition hover:bg-gray-100"
+                >
+                  Get Started
+                  <span className="ml-2">→</span>
+                </Link>
+              )}
 
             </div>
           </div>

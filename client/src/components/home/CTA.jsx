@@ -1,6 +1,9 @@
 import { Link } from "react-router-dom";
+import useAuth from "../../hooks/useAuth";
 
 const CTA = () => {
+  const { isAuthenticated } = useAuth();
+
   return (
     <section className="w-full bg-white px-6 py-16 lg:px-8">
       <div
@@ -40,8 +43,9 @@ const CTA = () => {
           {/* Buttons */}
           <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
 
+            {/* Create Shipment */}
             <Link
-              to="/signup"
+              to={isAuthenticated ? "/create-shipment" : "/signup"}
               className="
                 inline-flex
                 items-center
@@ -58,12 +62,13 @@ const CTA = () => {
                 hover:bg-gray-200
               "
             >
-              Create Shipment
+              {isAuthenticated ? "Create Shipment" : "Get Started"}
               <span className="ml-2">→</span>
             </Link>
 
+            {/* Track Parcel */}
             <Link
-              to="/track"
+              to="/track-parcel"
               className="
                 inline-flex
                 items-center
@@ -85,7 +90,6 @@ const CTA = () => {
             </Link>
 
           </div>
-
         </div>
       </div>
     </section>
