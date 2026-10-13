@@ -5,7 +5,7 @@ const CTA = () => {
   const { isAuthenticated } = useAuth();
 
   return (
-    <section className="w-full bg-white px-6 py-16 lg:px-8">
+    <section className="w-full bg-white px-6 pt-2 pb-14 lg:px-8 lg:pt-0 lg:pb-14">
       <div
         className="
           mx-auto
@@ -97,3 +97,4 @@ const CTA = () => {
 };
 
 export default CTA;
+

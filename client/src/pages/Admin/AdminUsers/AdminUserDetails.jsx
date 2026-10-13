@@ -118,22 +118,7 @@ const AdminUserDetails = () => {
             </div>
           </div>
 
-          {/* Phone */}
-          <div className="flex items-start gap-3">
-            <div className="rounded-[5px] bg-gray-100 p-2 text-gray-600">
-              <Phone size={18} />
-            </div>
-
-            <div>
-              <p className="text-xs text-gray-500">
-                Phone Number
-              </p>
-
-              <p className="mt-1 text-sm font-medium text-gray-900">
-                {user.phone}
-              </p>
-            </div>
-          </div>
+       
 
           {/* Role */}
           <div className="flex items-start gap-3">
@@ -165,23 +150,6 @@ const AdminUserDetails = () => {
 
               <p className="mt-1 text-sm font-medium text-gray-900">
                 {user.joined}
-              </p>
-            </div>
-          </div>
-
-          {/* Address */}
-          <div className="flex items-start gap-3 md:col-span-2">
-            <div className="rounded-[5px] bg-gray-100 p-2 text-gray-600">
-              <User size={18} />
-            </div>
-
-            <div>
-              <p className="text-xs text-gray-500">
-                Address
-              </p>
-
-              <p className="mt-1 text-sm font-medium text-gray-900">
-                {user.address}
               </p>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Eye,
   Edit,
@@ -8,58 +8,80 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
+import {
+  getAllShipments,
+  deleteShipment as deleteShipmentApi,
+} from "../../../services/ShipmentServices";
+
 const AdminShipments = () => {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("All");
-  const [deleteShipment, setDeleteShipment] = useState(null);
 
-  const [shipments, setShipments] = useState([
-    {
-      id: 1,
-      trackingNumber: "CR102458",
-      customer: "Rahul Kumar",
-      origin: "Hyderabad",
-      destination: "Mumbai",
-      status: "Delivered",
-      date: "05 Oct 2026",
-    },
-    {
-      id: 2,
-      trackingNumber: "CR102459",
-      customer: "Priya Sharma",
-      origin: "Bangalore",
-      destination: "Delhi",
-      status: "In Transit",
-      date: "05 Oct 2026",
-    },
-    {
-      id: 3,
-      trackingNumber: "CR102460",
-      customer: "Arjun Reddy",
-      origin: "Chennai",
-      destination: "Hyderabad",
-      status: "Pending",
-      date: "04 Oct 2026",
-    },
-    {
-      id: 4,
-      trackingNumber: "CR102461",
-      customer: "Sneha Patel",
-      origin: "Mumbai",
-      destination: "Pune",
-      status: "Delivered",
-      date: "04 Oct 2026",
-    },
-    {
-      id: 5,
-      trackingNumber: "CR102462",
-      customer: "Vikram Singh",
-      origin: "Delhi",
-      destination: "Bangalore",
-      status: "In Transit",
-      date: "03 Oct 2026",
-    },
-  ]);
+
+  const [shipments, setShipments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // Fetch all shipments
+  useEffect(() => {
+    const fetchShipments = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const response = await getAllShipments();
+
+        console.log("SHIPMENTS RESPONSE:", response);
+
+        /*
+          Handles common backend response formats:
+
+          {
+            success: true,
+            shipments: [...]
+          }
+
+          OR
+
+          {
+            success: true,
+            data: [...]
+          }
+        */
+
+        const shipmentData =
+          response?.shipments ||
+          response?.data ||
+          [];
+
+        setShipments(
+          Array.isArray(shipmentData) ? shipmentData : []
+        );
+      } catch (error) {
+        console.error("Failed to fetch shipments:", error);
+
+        setError(
+          error?.response?.data?.message ||
+            "Failed to fetch shipments"
+        );
+
+        setShipments([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchShipments();
+  }, []);
+
+  // Convert backend status to UI status
+  const getDisplayStatus = (shipmentStatus) => {
+    if (shipmentStatus === "Booked") {
+      return "Pending";
+    }
+
+    return shipmentStatus || "Unknown";
+  };
 
   // Status Colors
   const getStatusStyle = (shipmentStatus) => {
@@ -78,36 +100,70 @@ const AdminShipments = () => {
     }
   };
 
-  // Search and Status Filter
-  const filteredShipments = shipments.filter((shipment) => {
-    const searchValue = search.toLowerCase();
+  // Format Date
+  const formatDate = (date) => {
+    if (!date) return "N/A";
 
-    const matchesSearch =
-      shipment.trackingNumber
-        .toLowerCase()
-        .includes(searchValue) ||
-      shipment.customer
-        .toLowerCase()
-        .includes(searchValue);
-
-    const matchesStatus =
-      status === "All" || shipment.status === status;
-
-    return matchesSearch && matchesStatus;
-  });
-
-  // Delete Shipment
-  const handleDelete = () => {
-    if (!deleteShipment) return;
-
-    setShipments((currentShipments) =>
-      currentShipments.filter(
-        (shipment) => shipment.id !== deleteShipment.id
-      )
-    );
-
-    setDeleteShipment(null);
+    return new Date(date).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
   };
+
+  // Prepare shipments for UI
+  const formattedShipments = shipments.map((shipment) => ({
+    ...shipment,
+
+    id: shipment._id || shipment.id,
+
+    trackingNumber:
+      shipment.trackingNumber || "N/A",
+
+    customer:
+      shipment.customer?.name ||
+      shipment.customerName ||
+      "Unknown",
+
+    origin:
+      shipment.sender?.city ||
+      shipment.origin ||
+      "N/A",
+
+    destination:
+      shipment.receiver?.city ||
+      shipment.destination ||
+      "N/A",
+
+    status: getDisplayStatus(shipment.status),
+
+    date: formatDate(
+      shipment.createdAt || shipment.date
+    ),
+  }));
+
+  // Search and Status Filter
+  const filteredShipments = formattedShipments.filter(
+    (shipment) => {
+      const searchValue = search.toLowerCase();
+
+      const matchesSearch =
+        shipment.trackingNumber
+          .toLowerCase()
+          .includes(searchValue) ||
+        shipment.customer
+          .toLowerCase()
+          .includes(searchValue);
+
+      const matchesStatus =
+        status === "All" ||
+        shipment.status === status;
+
+      return matchesSearch && matchesStatus;
+    }
+  );
+
+
 
   return (
     <div className="space-y-6 bg-white">
@@ -137,7 +193,9 @@ const AdminShipments = () => {
             type="text"
             placeholder="Search tracking number or customer..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) =>
+              setSearch(e.target.value)
+            }
             className="w-full rounded-[5px] border border-gray-200 py-2.5 pl-10 pr-4 text-sm outline-none transition focus:border-black"
           />
         </div>
@@ -145,7 +203,9 @@ const AdminShipments = () => {
         {/* Status Filter */}
         <select
           value={status}
-          onChange={(e) => setStatus(e.target.value)}
+          onChange={(e) =>
+            setStatus(e.target.value)
+          }
           className="w-full rounded-[5px] border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-600 outline-none transition focus:border-black sm:w-auto"
         >
           <option value="All">
@@ -165,6 +225,13 @@ const AdminShipments = () => {
           </option>
         </select>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="rounded-[5px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+          {error}
+        </div>
+      )}
 
       {/* Shipments Table */}
       <div className="overflow-hidden rounded-[5px] border border-gray-200 bg-white">
@@ -206,7 +273,18 @@ const AdminShipments = () => {
             {/* Table Body */}
             <tbody>
 
-              {filteredShipments.length > 0 ? (
+              {/* Loading */}
+              {loading ? (
+                <tr>
+                  <td
+                    colSpan="6"
+                    className="px-6 py-10 text-center text-sm text-gray-500"
+                  >
+                    Loading shipments...
+                  </td>
+                </tr>
+              ) : filteredShipments.length > 0 ? (
+
                 filteredShipments.map((shipment) => (
                   <tr
                     key={shipment.id}
@@ -225,6 +303,7 @@ const AdminShipments = () => {
 
                     {/* Route */}
                     <td className="px-6 py-4 text-sm text-gray-600">
+
                       <span>
                         {shipment.origin}
                       </span>
@@ -236,10 +315,12 @@ const AdminShipments = () => {
                       <span>
                         {shipment.destination}
                       </span>
+
                     </td>
 
                     {/* Status */}
                     <td className="px-6 py-4">
+
                       <span
                         className={`inline-flex rounded-[5px] px-3 py-1 text-xs font-medium ${getStatusStyle(
                           shipment.status
@@ -247,6 +328,7 @@ const AdminShipments = () => {
                       >
                         {shipment.status}
                       </span>
+
                     </td>
 
                     {/* Date */}
@@ -256,6 +338,7 @@ const AdminShipments = () => {
 
                     {/* Actions */}
                     <td className="px-6 py-4">
+
                       <div className="flex justify-end gap-2">
 
                         {/* View */}
@@ -276,22 +359,13 @@ const AdminShipments = () => {
                           <Edit size={17} />
                         </Link>
 
-                        {/* Delete */}
-                        <button
-                          onClick={() =>
-                            setDeleteShipment(shipment)
-                          }
-                          className="rounded-[5px] p-2 text-gray-500 transition hover:bg-gray-100 hover:text-red-600"
-                          title="Delete"
-                        >
-                          <Trash2 size={17} />
-                        </button>
-
                       </div>
+
                     </td>
 
                   </tr>
                 ))
+
               ) : (
 
                 /* No Results */
@@ -320,72 +394,7 @@ const AdminShipments = () => {
       </p>
 
       {/* Delete Confirmation Modal */}
-      {deleteShipment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-
-          <div className="w-full max-w-sm rounded-[5px] bg-white p-5 shadow-xl sm:p-6">
-
-            {/* Modal Header */}
-            <div className="flex items-start justify-between">
-
-              <div>
-                <h3 className="text-lg font-semibold text-black">
-                  Delete Shipment?
-                </h3>
-
-                <p className="mt-1 text-sm text-gray-500">
-                  Are you sure you want to delete this shipment?
-                </p>
-              </div>
-
-              <button
-                onClick={() => setDeleteShipment(null)}
-                className="rounded-[5px] p-1 text-gray-400 transition hover:bg-gray-100 hover:text-black"
-                aria-label="Close"
-              >
-                <X size={20} />
-              </button>
-
-            </div>
-
-            {/* Shipment Information */}
-            <div className="mt-5 rounded-[5px] bg-gray-50 p-4">
-
-              <p className="text-sm font-semibold text-black">
-                {deleteShipment.trackingNumber}
-              </p>
-
-              <p className="mt-1 text-sm text-gray-500">
-                {deleteShipment.customer}
-              </p>
-
-            </div>
-
-            {/* Modal Buttons */}
-            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-
-              {/* Cancel */}
-              <button
-                onClick={() => setDeleteShipment(null)}
-                className="w-full rounded-[5px] border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 sm:w-auto"
-              >
-                Cancel
-              </button>
-
-              {/* Delete */}
-              <button
-                onClick={handleDelete}
-                className="w-full rounded-[5px] bg-black px-4 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800 sm:w-auto"
-              >
-                Delete
-              </button>
-
-            </div>
-
-          </div>
-
-        </div>
-      )}
+     
 
     </div>
   );

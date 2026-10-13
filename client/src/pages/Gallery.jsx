@@ -1,49 +1,29 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X, Image as ImageIcon } from "lucide-react";
+import { getGallery } from "../services/GalleryService";
 
 const Gallery = () => {
   const [selectedImage, setSelectedImage] = useState(null);
+  const [galleryItems, setGalleryItems] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Temporary gallery data
-  // Replace these with your API data later
-  const galleryItems = [
-    {
-      id: 1,
-      image:
-        "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=900&q=80",
-      title: "Courier Delivery",
-    },
-    {
-      id: 2,
-      image:
-        "https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?auto=format&fit=crop&w=900&q=80",
-      title: "Package Delivery",
-    },
-    {
-      id: 3,
-      image:
-        "https://images.unsplash.com/photo-1616401784845-180882ba9ba8?auto=format&fit=crop&w=900&q=80",
-      title: "Fast Delivery",
-    },
-    {
-      id: 4,
-      image:
-        "https://images.unsplash.com/photo-1580674684081-7617fbf3d745?auto=format&fit=crop&w=900&q=80",
-      title: "Shipment Handling",
-    },
-    {
-      id: 5,
-      image:
-        "https://images.unsplash.com/photo-1601584115197-04ecc0da31d8?auto=format&fit=crop&w=900&q=80",
-      title: "Logistics",
-    },
-    {
-      id: 6,
-      image:
-        "https://images.unsplash.com/photo-1494412651409-8963ce7935a7?auto=format&fit=crop&w=900&q=80",
-      title: "Delivery Service",
-    },
-  ];
+  useEffect(() => {
+    const fetchGallery = async () => {
+      try {
+        const response = await getGallery();
+
+        setGalleryItems(response.gallery || []);
+      } catch (error) {
+        console.error("Failed to fetch gallery:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGallery();
+  }, []);
+
+  
 
   return (
     <main className="min-h-screen bg-white px-6 py-12">

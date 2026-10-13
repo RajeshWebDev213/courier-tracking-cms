@@ -1,21 +1,30 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   User,
   Lock,
-  Bell,
   Save,
   Eye,
   EyeOff,
 } from "lucide-react";
+
+import {
+  getAdminSettings,
+  updateAdminProfile,
+  changeAdminPassword,
+} from "../../services/AdminSettingsService";
 
 const AdminSettings = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] =
     useState(false);
 
+  const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+
   const [profile, setProfile] = useState({
-    name: "Admin User",
-    email: "admin@parcelflow.com",
+    name: "",
+    email: "",
   });
 
   const [password, setPassword] = useState({
@@ -24,31 +33,168 @@ const AdminSettings = () => {
     confirmPassword: "",
   });
 
-  const [notifications, setNotifications] = useState({
-    shipmentUpdates: true,
-    newShipments: true,
-    systemNotifications: true,
-  });
+  // ==========================================
+  // GET ADMIN SETTINGS
+  // ==========================================
+  useEffect(() => {
+    const fetchAdminSettings = async () => {
+      try {
+        const data = await getAdminSettings();
 
-  // =========================
+        setProfile({
+          name: data.admin.name || "",
+          email: data.admin.email || "",
+        });
+      } catch (error) {
+        console.error(
+          "Failed to load admin settings:",
+          error
+        );
+
+        alert(
+          error.response?.data?.message ||
+            "Failed to load admin settings"
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAdminSettings();
+  }, []);
+
+  // ==========================================
   // PROFILE CHANGE
-  // =========================
+  // ==========================================
   const handleProfileChange = (e) => {
-    setProfile({
-      ...profile,
+    setProfile((prev) => ({
+      ...prev,
       [e.target.name]: e.target.value,
-    });
+    }));
   };
 
-  // =========================
+  // ==========================================
   // PASSWORD CHANGE
-  // =========================
+  // ==========================================
   const handlePasswordChange = (e) => {
-    setPassword({
-      ...password,
+    setPassword((prev) => ({
+      ...prev,
       [e.target.name]: e.target.value,
-    });
+    }));
   };
+
+  // ==========================================
+  // UPDATE PROFILE
+  // ==========================================
+  const handleProfileSubmit = async () => {
+    if (!profile.name.trim() || !profile.email.trim()) {
+      alert("Name and email are required");
+      return;
+    }
+
+    try {
+      setProfileLoading(true);
+
+      const data = await updateAdminProfile({
+        name: profile.name,
+        email: profile.email,
+      });
+
+      setProfile({
+        name: data.admin.name,
+        email: data.admin.email,
+      });
+
+      alert("Profile updated successfully");
+    } catch (error) {
+      console.error(
+        "Profile update error:",
+        error
+      );
+
+      alert(
+        error.response?.data?.message ||
+          "Failed to update profile"
+      );
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  // ==========================================
+  // UPDATE PASSWORD
+  // ==========================================
+  const handlePasswordSubmit = async () => {
+    const {
+      currentPassword,
+      newPassword,
+      confirmPassword,
+    } = password;
+
+    if (
+      !currentPassword ||
+      !newPassword ||
+      !confirmPassword
+    ) {
+      alert("All password fields are required");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      alert("New passwords do not match");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      alert(
+        "New password must be at least 6 characters"
+      );
+      return;
+    }
+
+    try {
+      setPasswordLoading(true);
+
+      await changeAdminPassword({
+        currentPassword,
+        newPassword,
+        confirmPassword,
+      });
+
+      setPassword({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+
+      alert("Password updated successfully");
+    } catch (error) {
+      console.error(
+        "Password update error:",
+        error
+      );
+
+      alert(
+        error.response?.data?.message ||
+          "Failed to update password"
+      );
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
+  // ==========================================
+  // LOADING
+  // ==========================================
+  if (loading) {
+    return (
+      <div className="flex min-h-[300px] items-center justify-center bg-white">
+        <p className="text-sm text-gray-500">
+          Loading settings...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-full space-y-6 bg-white">
@@ -67,8 +213,9 @@ const AdminSettings = () => {
       {/* ================= PROFILE SETTINGS ================= */}
       <div className="rounded-[5px] border border-gray-200 bg-white">
 
-        {/* Section Header */}
+        {/* Header */}
         <div className="flex items-center gap-3 border-b border-gray-200 px-5 py-4 sm:px-6">
+
           <div className="flex h-9 w-9 items-center justify-center rounded-[5px] bg-gray-100 text-gray-600">
             <User size={18} />
           </div>
@@ -82,6 +229,7 @@ const AdminSettings = () => {
               Update your administrator information.
             </p>
           </div>
+
         </div>
 
         {/* Form */}
@@ -98,6 +246,7 @@ const AdminSettings = () => {
               name="name"
               value={profile.name}
               onChange={handleProfileChange}
+              placeholder="Enter your name"
               className="w-full rounded-[5px] border border-gray-200 px-4 py-2.5 text-sm text-black outline-none transition focus:border-black"
             />
           </div>
@@ -113,19 +262,27 @@ const AdminSettings = () => {
               name="email"
               value={profile.email}
               onChange={handleProfileChange}
+              placeholder="Enter your email"
               className="w-full rounded-[5px] border border-gray-200 px-4 py-2.5 text-sm text-black outline-none transition focus:border-black"
             />
           </div>
 
           {/* Save */}
           <div className="flex justify-end border-t border-gray-100 pt-5">
+
             <button
               type="button"
-              className="flex w-full items-center justify-center gap-2 rounded-[5px] bg-black px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800 sm:w-auto"
+              onClick={handleProfileSubmit}
+              disabled={profileLoading}
+              className="flex w-full items-center justify-center gap-2 rounded-[5px] bg-black px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
             >
               <Save size={17} />
-              Save Changes
+
+              {profileLoading
+                ? "Saving..."
+                : "Save Changes"}
             </button>
+
           </div>
         </div>
       </div>
@@ -133,8 +290,9 @@ const AdminSettings = () => {
       {/* ================= PASSWORD SETTINGS ================= */}
       <div className="rounded-[5px] border border-gray-200 bg-white">
 
-        {/* Section Header */}
+        {/* Header */}
         <div className="flex items-center gap-3 border-b border-gray-200 px-5 py-4 sm:px-6">
+
           <div className="flex h-9 w-9 items-center justify-center rounded-[5px] bg-gray-100 text-gray-600">
             <Lock size={18} />
           </div>
@@ -148,6 +306,7 @@ const AdminSettings = () => {
               Update your administrator account password.
             </p>
           </div>
+
         </div>
 
         {/* Password Form */}
@@ -160,8 +319,13 @@ const AdminSettings = () => {
             </label>
 
             <div className="relative">
+
               <input
-                type={showPassword ? "text" : "password"}
+                type={
+                  showPassword
+                    ? "text"
+                    : "password"
+                }
                 name="currentPassword"
                 value={password.currentPassword}
                 onChange={handlePasswordChange}
@@ -172,7 +336,7 @@ const AdminSettings = () => {
               <button
                 type="button"
                 onClick={() =>
-                  setShowPassword(!showPassword)
+                  setShowPassword((prev) => !prev)
                 }
                 className="absolute right-2 top-1/2 -translate-y-1/2 rounded-[5px] p-2 text-gray-400 hover:bg-gray-100 hover:text-black"
               >
@@ -182,6 +346,7 @@ const AdminSettings = () => {
                   <Eye size={17} />
                 )}
               </button>
+
             </div>
           </div>
 
@@ -208,6 +373,7 @@ const AdminSettings = () => {
             </label>
 
             <div className="relative">
+
               <input
                 type={
                   showConfirmPassword
@@ -225,7 +391,7 @@ const AdminSettings = () => {
                 type="button"
                 onClick={() =>
                   setShowConfirmPassword(
-                    !showConfirmPassword
+                    (prev) => !prev
                   )
                 }
                 className="absolute right-2 top-1/2 -translate-y-1/2 rounded-[5px] p-2 text-gray-400 hover:bg-gray-100 hover:text-black"
@@ -236,19 +402,28 @@ const AdminSettings = () => {
                   <Eye size={17} />
                 )}
               </button>
+
             </div>
           </div>
 
           {/* Update Password */}
           <div className="flex justify-end border-t border-gray-100 pt-5">
+
             <button
               type="button"
-              className="flex w-full items-center justify-center gap-2 rounded-[5px] bg-black px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800 sm:w-auto"
+              onClick={handlePasswordSubmit}
+              disabled={passwordLoading}
+              className="flex w-full items-center justify-center gap-2 rounded-[5px] bg-black px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
             >
               <Lock size={17} />
-              Update Password
+
+              {passwordLoading
+                ? "Updating..."
+                : "Update Password"}
             </button>
+
           </div>
+
         </div>
       </div>
     </div>

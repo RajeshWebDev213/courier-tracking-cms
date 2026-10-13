@@ -1,33 +1,178 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+import { updateShipment ,getShipmentById } from "../../../services/ShipmentServices";
+import { updateTracking } from "../../../services/TrackingServices";
 
 const AdminEditShipment = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  // Temporary data - replace with API data later
-  const [status, setStatus] = useState("In Transit");
+  const [status, setStatus] = useState("");
+  const [shipment, setShipment] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
+  const [error, setError] = useState("");
 
-  const shipment = {
-    trackingNumber: "CR102458",
-    customerName: "Rahul Kumar",
-    origin: "Hyderabad",
-    destination: "Mumbai",
-    packageType: "Document",
-    weight: "2.5 kg",
+  const statusFlow = [
+    "Booked",
+    "Picked Up",
+    "In Transit",
+    "Out for Delivery",
+    "Delivered",
+  ];
+
+  // Fetch shipment
+useEffect(() => {
+  const fetchShipment = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await getShipmentById(id);
+
+      console.log("SHIPMENT RESPONSE:", response);
+
+      const shipmentData = response?.shipment;
+
+      if (!shipmentData) {
+        setError("Shipment not found.");
+        return;
+      }
+
+      setShipment(shipmentData);
+      setStatus(shipmentData.status || "Booked");
+    } catch (error) {
+      console.error("FETCH SHIPMENT ERROR:", error);
+      console.error("ERROR RESPONSE:", error.response?.data);
+
+      setError(
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Failed to fetch shipment."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  if (id) {
+    fetchShipment();
+  }
+}, [id]);
 
-    console.log("Updating shipment:", id);
-    console.log("New status:", status);
+  // Current status position
+  const currentStatusIndex =
+    statusFlow.indexOf(
+      shipment?.status
+    );
 
-    // API PUT/PATCH request will be added here later
+  // Only future statuses
+  const nextStatuses =
+    currentStatusIndex >= 0
+      ? statusFlow.slice(
+          currentStatusIndex + 1
+        )
+      : statusFlow;
+
+  // Update status
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  try {
+    setUpdating(true);
+    setError("");
+
+    console.log("UPDATE BUTTON CLICKED");
+    console.log("Shipment ID:", id);
+    console.log("Current DB Status:", shipment.status);
+    console.log("Selected Status:", status);
+
+    const response = await updateShipment(id, {
+      status: status,
+    });
+
+    console.log("UPDATE RESPONSE:", response);
 
     navigate(`/admin/shipments/${id}`);
-  };
+  } catch (error) {
+    console.error("UPDATE STATUS ERROR:", error);
+    console.error("SERVER RESPONSE:", error.response?.data);
+
+    setError(
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      "Failed to update shipment status."
+    );
+  } finally {
+    setUpdating(false);
+  }
+};
+
+  // Loading
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-3xl space-y-6 bg-white">
+        <div className="flex items-center gap-3">
+
+          <Link
+            to={`/admin/shipments/${id}`}
+            className="rounded-[5px] border border-gray-200 p-2 text-gray-600 transition hover:bg-gray-50 hover:text-black"
+          >
+            <ArrowLeft size={20} />
+          </Link>
+
+          <div>
+            <h2 className="text-2xl font-bold text-black">
+              Update Shipment Status
+            </h2>
+
+            <p className="mt-1 text-sm text-gray-500">
+              Update the current status of this shipment.
+            </p>
+          </div>
+
+        </div>
+
+        <div className="rounded-[5px] border border-gray-200 bg-white p-6">
+          <p className="text-sm text-gray-500">
+            Loading shipment...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Shipment not found
+  if (!shipment) {
+    return (
+      <div className="mx-auto max-w-3xl space-y-6 bg-white">
+
+        <div className="flex items-center gap-3">
+
+          <Link
+            to="/admin/shipments"
+            className="rounded-[5px] border border-gray-200 p-2 text-gray-600 transition hover:bg-gray-50 hover:text-black"
+          >
+            <ArrowLeft size={20} />
+          </Link>
+
+          <div>
+            <h2 className="text-2xl font-bold text-black">
+              Update Shipment Status
+            </h2>
+
+            <p className="mt-1 text-sm text-red-500">
+              {error || "Shipment not found."}
+            </p>
+          </div>
+
+        </div>
+
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 bg-white">
@@ -54,6 +199,15 @@ const AdminEditShipment = () => {
 
       </div>
 
+      {/* Error */}
+      {error && (
+        <div className="rounded-[5px] border border-red-200 bg-red-50 p-4">
+          <p className="text-sm text-red-600">
+            {error}
+          </p>
+        </div>
+      )}
+
       {/* Shipment Details */}
       <div className="rounded-[5px] border border-gray-200 bg-white">
 
@@ -78,7 +232,7 @@ const AdminEditShipment = () => {
             </p>
 
             <p className="mt-1 text-sm font-semibold text-black">
-              {shipment.trackingNumber}
+              {shipment.trackingNumber || "N/A"}
             </p>
           </div>
 
@@ -89,7 +243,9 @@ const AdminEditShipment = () => {
             </p>
 
             <p className="mt-1 text-sm font-medium text-gray-900">
-              {shipment.customerName}
+              {shipment.customer?.name ||
+                shipment.customerName ||
+                "N/A"}
             </p>
           </div>
 
@@ -100,7 +256,9 @@ const AdminEditShipment = () => {
             </p>
 
             <p className="mt-1 text-sm font-medium text-gray-900">
-              {shipment.origin}
+              {shipment.sender?.city ||
+                shipment.origin ||
+                "N/A"}
             </p>
           </div>
 
@@ -111,7 +269,9 @@ const AdminEditShipment = () => {
             </p>
 
             <p className="mt-1 text-sm font-medium text-gray-900">
-              {shipment.destination}
+              {shipment.receiver?.city ||
+                shipment.destination ||
+                "N/A"}
             </p>
           </div>
 
@@ -122,7 +282,7 @@ const AdminEditShipment = () => {
             </p>
 
             <p className="mt-1 text-sm font-medium text-gray-900">
-              {shipment.packageType}
+              {shipment.packageType || "N/A"}
             </p>
           </div>
 
@@ -133,7 +293,9 @@ const AdminEditShipment = () => {
             </p>
 
             <p className="mt-1 text-sm font-medium text-gray-900">
-              {shipment.weight}
+              {shipment.weight
+                ? `${shipment.weight} kg`
+                : "N/A"}
             </p>
           </div>
 
@@ -169,20 +331,41 @@ const AdminEditShipment = () => {
             <select
               id="status"
               value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="mt-2 w-full rounded-[5px] border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-700 outline-none transition focus:border-black"
+              onChange={(e) =>
+                setStatus(e.target.value)
+              }
+              disabled={
+                shipment.status === "Delivered" ||
+                shipment.status === "Cancelled"
+              }
+              className="mt-2 w-full rounded-[5px] border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-700 outline-none transition focus:border-black disabled:cursor-not-allowed disabled:bg-gray-50"
             >
-              <option value="Pending">
-                Pending
+
+              {/* Current status */}
+              <option value={shipment.status}>
+                {shipment.status}
               </option>
 
-              <option value="In Transit">
-                In Transit
-              </option>
+              {/* Next statuses only */}
+              {nextStatuses.map(
+                (nextStatus) => (
+                  <option
+                    key={nextStatus}
+                    value={nextStatus}
+                  >
+                    {nextStatus}
+                  </option>
+                )
+              )}
 
-              <option value="Delivered">
-                Delivered
-              </option>
+              {/* Cancel */}
+              {shipment.status !== "Delivered" &&
+                shipment.status !== "Cancelled" && (
+                  <option value="Cancelled">
+                    Cancelled
+                  </option>
+                )}
+
             </select>
 
           </div>
@@ -200,7 +383,13 @@ const AdminEditShipment = () => {
                   ? "bg-green-100 text-green-700"
                   : status === "In Transit"
                   ? "bg-blue-100 text-blue-700"
-                  : "bg-yellow-100 text-yellow-700"
+                  : status === "Out for Delivery"
+                  ? "bg-purple-100 text-purple-700"
+                  : status === "Picked Up"
+                  ? "bg-yellow-100 text-yellow-700"
+                  : status === "Cancelled"
+                  ? "bg-red-100 text-red-700"
+                  : "bg-gray-100 text-gray-700"
               }`}
             >
               {status}
@@ -222,9 +411,17 @@ const AdminEditShipment = () => {
 
           <button
             type="submit"
-            className="w-full rounded-[5px] bg-black px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800 sm:w-auto"
+            disabled={
+              updating ||
+              status === shipment.status ||
+              shipment.status === "Delivered" ||
+              shipment.status === "Cancelled"
+            }
+            className="w-full rounded-[5px] bg-black px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
           >
-            Update Status
+            {updating
+              ? "Updating..."
+              : "Update Status"}
           </button>
 
         </div>

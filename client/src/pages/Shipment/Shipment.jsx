@@ -5,6 +5,7 @@ import {
   Eye,
   MapPin,
   ArrowRight,
+  Truck,
 } from "lucide-react";
 import { useState } from "react";
 import useAuth from "../../hooks/useAuth";
@@ -21,6 +22,53 @@ const Shipment = () => {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+
+  // ==============================
+  // Status Color
+  // ==============================
+
+  const getStatusStyle = (status) => {
+    switch (status) {
+      case "Delivered":
+        return "border-green-200 bg-green-50 text-green-700";
+
+      case "In Transit":
+        return "border-blue-200 bg-blue-50 text-blue-700";
+
+      case "Picked Up":
+        return "border-yellow-200 bg-yellow-50 text-yellow-700";
+
+      case "Out for Delivery":
+        return "border-purple-200 bg-purple-50 text-purple-700";
+
+      case "Cancelled":
+        return "border-red-200 bg-red-50 text-red-700";
+
+      case "Booked":
+      default:
+        return "border-gray-200 bg-gray-50 text-gray-700";
+    }
+  };
+
+  // ==============================
+  // Service Type Color
+  // ==============================
+
+  const getServiceTypeStyle = (type) => {
+    switch (type?.toLowerCase()) {
+      case "express":
+        return "border-orange-200 bg-orange-50 text-orange-700";
+
+      case "business":
+        return "border-blue-200 bg-blue-50 text-blue-700";
+
+      case "domestic":
+        return "border-green-200 bg-green-50 text-green-700";
+
+      default:
+        return "border-gray-200 bg-gray-50 text-gray-700";
+    }
+  };
 
   // ==============================
   // Filter Shipments
@@ -116,7 +164,10 @@ const Shipment = () => {
     <main className="min-h-screen bg-white px-6 py-12">
       <div className="mx-auto max-w-7xl">
 
+        {/* ============================== */}
         {/* Header */}
+        {/* ============================== */}
+
         <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
 
           <div>
@@ -142,14 +193,20 @@ const Shipment = () => {
 
         </div>
 
+        {/* ============================== */}
         {/* Error */}
+        {/* ============================== */}
+
         {error && (
           <div className="mt-6 rounded-[5px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
             {error}
           </div>
         )}
 
+        {/* ============================== */}
         {/* Search & Filter */}
+        {/* ============================== */}
+
         <div className="mt-10 flex flex-col gap-3 sm:flex-row">
 
           {/* Search */}
@@ -189,9 +246,13 @@ const Shipment = () => {
 
         </div>
 
+        {/* ============================== */}
         {/* No Shipments */}
+        {/* ============================== */}
+
         {!error && filteredShipments.length === 0 && (
           <div className="mt-10 rounded-[5px] border border-gray-200 px-6 py-16 text-center">
+
             <Package
               size={40}
               className="mx-auto text-gray-400"
@@ -215,12 +276,13 @@ const Shipment = () => {
                 Create Shipment
               </Link>
             )}
+
           </div>
         )}
 
-        {/* ==============================
-            Desktop Table
-        ============================== */}
+        {/* ================================================= */}
+        {/* Desktop Table */}
+        {/* ================================================= */}
 
         {filteredShipments.length > 0 && (
           <div className="mt-6 hidden overflow-hidden rounded-[5px] border border-gray-200 md:block">
@@ -243,6 +305,10 @@ const Shipment = () => {
                   </th>
 
                   <th className="px-6 py-4 text-sm font-medium text-gray-600">
+                    Service
+                  </th>
+
+                  <th className="px-6 py-4 text-sm font-medium text-gray-600">
                     Date
                   </th>
 
@@ -260,6 +326,7 @@ const Shipment = () => {
               <tbody>
 
                 {filteredShipments.map((shipment) => (
+
                   <tr
                     key={shipment._id || shipment.trackingNumber}
                     className="border-b border-gray-100 last:border-0"
@@ -267,6 +334,7 @@ const Shipment = () => {
 
                     {/* Tracking Number */}
                     <td className="px-6 py-5">
+
                       <div className="flex items-center gap-2">
 
                         <Package size={17} />
@@ -276,6 +344,7 @@ const Shipment = () => {
                         </span>
 
                       </div>
+
                     </td>
 
                     {/* Receiver */}
@@ -287,31 +356,72 @@ const Shipment = () => {
                     <td className="px-6 py-5">
 
                       <div className="flex items-center gap-2 text-sm text-gray-600">
+
                         <MapPin size={15} />
 
                         <span>
                           {shipment.receiver?.city || "-"}
+
                           {shipment.receiver?.state
                             ? `, ${shipment.receiver.state}`
                             : ""}
                         </span>
+
+                      </div>
+
+                    </td>
+
+                    {/* Service */}
+                    <td className="px-6 py-5">
+
+                      <div className="flex flex-col gap-2">
+
+                        <div className="flex items-center gap-2">
+
+                          <Truck
+                            size={15}
+                            className="text-gray-500"
+                          />
+
+                          <span className="text-sm font-medium text-black">
+                            {shipment.service?.name || "-"}
+                          </span>
+
+                        </div>
+
+                        {shipment.service?.type && (
+                          <span
+                            className={`w-fit rounded-[5px] border px-2 py-1 text-[11px] font-medium capitalize ${getServiceTypeStyle(
+                              shipment.service.type
+                            )}`}
+                          >
+                            {shipment.service.type}
+                          </span>
+                        )}
+
                       </div>
 
                     </td>
 
                     {/* Date */}
                     <td className="px-6 py-5 text-sm text-gray-600">
+
                       {shipment.createdAt
                         ? new Date(
                             shipment.createdAt
                           ).toLocaleDateString()
                         : "-"}
+
                     </td>
 
                     {/* Status */}
                     <td className="px-6 py-5">
 
-                      <span className="rounded-[5px] border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-black">
+                      <span
+                        className={`inline-flex rounded-[5px] border px-3 py-1.5 text-xs font-medium ${getStatusStyle(
+                          shipment.status
+                        )}`}
+                      >
                         {shipment.status || "Booked"}
                       </span>
 
@@ -331,7 +441,7 @@ const Shipment = () => {
                         </Link>
 
                         <Link
-                          to={`/track-parcel?tracking=${shipment.trackingNumber}`}
+                          to={`/track-parcel?trackingNumber=${shipment.trackingNumber}`}
                           className="rounded-[5px] bg-black px-3 py-2 text-xs font-medium text-white hover:bg-gray-800"
                         >
                           Track
@@ -342,6 +452,7 @@ const Shipment = () => {
                     </td>
 
                   </tr>
+
                 ))}
 
               </tbody>
@@ -351,14 +462,15 @@ const Shipment = () => {
           </div>
         )}
 
-        {/* ==============================
-            Mobile Cards
-        ============================== */}
+        {/* ================================================= */}
+        {/* Mobile Cards */}
+        {/* ================================================= */}
 
         {filteredShipments.length > 0 && (
           <div className="mt-6 space-y-4 md:hidden">
 
             {filteredShipments.map((shipment) => (
+
               <div
                 key={shipment._id || shipment.trackingNumber}
                 className="rounded-[5px] border border-gray-200 p-5"
@@ -368,6 +480,7 @@ const Shipment = () => {
                 <div className="flex items-start justify-between gap-3">
 
                   <div>
+
                     <p className="text-xs text-gray-500">
                       Tracking Number
                     </p>
@@ -375,9 +488,14 @@ const Shipment = () => {
                     <h3 className="mt-1 font-semibold text-black">
                       {shipment.trackingNumber}
                     </h3>
+
                   </div>
 
-                  <span className="rounded-[5px] border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-black">
+                  <span
+                    className={`rounded-[5px] border px-3 py-1.5 text-xs font-medium ${getStatusStyle(
+                      shipment.status
+                    )}`}
+                  >
                     {shipment.status || "Booked"}
                   </span>
 
@@ -388,33 +506,83 @@ const Shipment = () => {
 
                   {/* Receiver */}
                   <p className="text-gray-600">
+
                     <span className="font-medium text-black">
                       Receiver:
                     </span>{" "}
+
                     {shipment.receiver?.name || "-"}
+
                   </p>
 
                   {/* Destination */}
                   <p className="text-gray-600">
+
                     <span className="font-medium text-black">
                       Destination:
                     </span>{" "}
+
                     {shipment.receiver?.city || "-"}
+
                     {shipment.receiver?.state
                       ? `, ${shipment.receiver.state}`
                       : ""}
+
                   </p>
+
+                  {/* Service */}
+                  <div className="text-gray-600">
+
+                    <span className="font-medium text-black">
+                      Service:
+                    </span>
+
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+
+                      <span>
+                        {shipment.service?.name || "-"}
+                      </span>
+
+                      {shipment.service?.type && (
+                        <span
+                          className={`rounded-[5px] border px-2 py-1 text-[11px] font-medium capitalize ${getServiceTypeStyle(
+                            shipment.service.type
+                          )}`}
+                        >
+                          {shipment.service.type}
+                        </span>
+                      )}
+
+                    </div>
+
+                  </div>
+
+                  {/* Price */}
+                  {shipment.service?.price !== undefined && (
+                    <p className="text-gray-600">
+
+                      <span className="font-medium text-black">
+                        Price:
+                      </span>{" "}
+
+                      ₹{shipment.service.price}
+
+                    </p>
+                  )}
 
                   {/* Date */}
                   <p className="text-gray-600">
+
                     <span className="font-medium text-black">
                       Date:
                     </span>{" "}
+
                     {shipment.createdAt
                       ? new Date(
                           shipment.createdAt
                         ).toLocaleDateString()
                       : "-"}
+
                   </p>
 
                 </div>
@@ -440,6 +608,7 @@ const Shipment = () => {
                 </div>
 
               </div>
+
             ))}
 
           </div>

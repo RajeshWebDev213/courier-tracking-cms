@@ -3,7 +3,7 @@ import { Routes, Route, useLocation } from "react-router-dom";
 import Navbar from "./components/common/Navbar";
 import AuthLayout from "./layouts/AuthLayout";
 
-import Login from "./components/auth/login";
+import Login from "./components/auth/Login";
 import Register from "./components/auth/register";
 
 import Home from "./pages/Home";
@@ -34,6 +34,7 @@ import AdminRoute from "./routes/AdminRoute";
 
 const App = () => {
   const location = useLocation();
+
 
   const isAuthPage =
     location.pathname === "/login" ||
@@ -85,7 +86,7 @@ const App = () => {
           />
 
           <Route
-            path="/me"
+            path="/profile"
             element={
               <ProtectedRoute>
                 <Account />
@@ -98,6 +99,7 @@ const App = () => {
           <Route
             path="/admin"
             element={
+              
               <AdminRoute>
                 <AdminLayout />
               </AdminRoute>

@@ -1,15 +1,57 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import api from "../../../services/api";
 
 const AdminEditUser = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
-    role: "Customer",
     status: "Active",
   });
+
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
+  const [error, setError] = useState("");
+
+  // Fetch user details
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const response = await api.get(`/api/users/${id}`);
+
+        const userData =
+          response.data?.user ||
+          response.data?.data;
+
+        if (!userData) {
+          throw new Error("User data not found");
+        }
+
+        setUser(userData);
+
+        setFormData({ status:
+            userData.status || "Active",
+        });
+      } catch (error) {
+        console.error("Fetch user error:", error);
+
+        setError(
+          error.response?.data?.message ||
+            "Failed to fetch user."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, [id]);
 
   const handleChange = (e) => {
     setFormData({
@@ -18,15 +60,40 @@ const AdminEditUser = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    console.log("Updated User:", id, formData);
+    try {
+      setUpdating(true);
+      setError("");
 
-    // PUT API will be added here
+      await api.put(`/api/users/${id}`, {
+        status: formData.status,
+      });
 
-    navigate(`/admin/users/${id}`);
+      // After successful update → User Dashboard
+      navigate("/admin/users");
+    } catch (error) {
+      console.error("Update user error:", error);
+
+      setError(
+        error.response?.data?.message ||
+          "Failed to update user."
+      );
+    } finally {
+      setUpdating(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <p className="text-sm text-gray-500">
+          Loading user...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -51,6 +118,13 @@ const AdminEditUser = () => {
         </div>
       </div>
 
+      {/* Error */}
+      {error && (
+        <div className="rounded-[5px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+          {error}
+        </div>
+      )}
+
       {/* User Information */}
       <div className="rounded-[5px] border border-gray-200 bg-white">
 
@@ -74,7 +148,7 @@ const AdminEditUser = () => {
             </label>
 
             <div className="rounded-[5px] border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-500">
-              Rahul Kumar
+              {user?.name || "N/A"}
             </div>
           </div>
 
@@ -85,31 +159,13 @@ const AdminEditUser = () => {
             </label>
 
             <div className="rounded-[5px] border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-500">
-              rahul@gmail.com
+              {user?.email || "N/A"}
             </div>
           </div>
 
-          {/* Phone */}
-          <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700">
-              Phone Number
-            </label>
+        
 
-            <div className="rounded-[5px] border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-500">
-              9876543210
-            </div>
-          </div>
-
-          {/* Address */}
-          <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700">
-              Address
-            </label>
-
-            <div className="rounded-[5px] border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-500">
-              Hyderabad, Telangana
-            </div>
-          </div>
+          
 
         </div>
 
@@ -122,15 +178,9 @@ const AdminEditUser = () => {
               Role
             </label>
 
-            <select
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              className="w-full rounded-[5px] border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none transition focus:border-gray-400"
-            >
-              <option value="Customer">Customer</option>
-              <option value="Admin">Admin</option>
-            </select>
+             <div className="rounded-[5px] border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-500">
+              {user?.role || "N/A"}
+            </div>
           </div>
 
           {/* Status */}
@@ -145,8 +195,13 @@ const AdminEditUser = () => {
               onChange={handleChange}
               className="w-full rounded-[5px] border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none transition focus:border-gray-400"
             >
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
+              <option value="Active">
+                Active
+              </option>
+
+              <option value="Inactive">
+                Inactive
+              </option>
             </select>
           </div>
 
@@ -165,9 +220,10 @@ const AdminEditUser = () => {
           <button
             type="button"
             onClick={handleSubmit}
-            className="rounded-[5px] bg-black px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800"
+            disabled={updating}
+            className="rounded-[5px] bg-black px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Update User
+            {updating ? "Updating..." : "Update User"}
           </button>
 
         </div>

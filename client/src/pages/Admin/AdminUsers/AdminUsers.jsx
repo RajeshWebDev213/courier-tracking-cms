@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Search,
   Eye,
@@ -8,64 +8,122 @@ import {
   Users,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import api from "../../../services/api";
 
 const AdminUsers = () => {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("All");
   const [deleteUser, setDeleteUser] = useState(null);
 
-  // Temporary data
-  const [users] = useState([
-    {
-      id: 1,
-      name: "Rahul Kumar",
-      email: "rahul@gmail.com",
-      phone: "9876543210",
-      role: "Customer",
-      joined: "05 Oct 2026",
-      status: "Active",
-    },
-    {
-      id: 2,
-      name: "Priya Sharma",
-      email: "priya@gmail.com",
-      phone: "9876543211",
-      role: "Customer",
-      joined: "04 Oct 2026",
-      status: "Active",
-    },
-    {
-      id: 3,
-      name: "Arjun Reddy",
-      email: "arjun@gmail.com",
-      phone: "9876543212",
-      role: "Customer",
-      joined: "03 Oct 2026",
-      status: "Active",
-    },
-    {
-      id: 4,
-      name: "Admin User",
-      email: "admin@courier.com",
-      phone: "9876543213",
-      role: "Admin",
-      joined: "01 Oct 2026",
-      status: "Active",
-    },
-  ]);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // Fetch users
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await api.get("/api/users");
+
+      const userData =
+        response.data?.users ||
+        response.data?.data ||
+        [];
+
+      setUsers(userData);
+    } catch (error) {
+      console.error("Fetch users error:", error);
+
+      setError(
+        error.response?.data?.message ||
+          "Failed to fetch users."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   // Filter users
   const filteredUsers = users.filter((user) => {
+    const name = user.name || "";
+    const email = user.email || "";
+    const phone = user.phone || "";
+
     const matchesSearch =
-      user.name.toLowerCase().includes(search.toLowerCase()) ||
-      user.email.toLowerCase().includes(search.toLowerCase()) ||
-      user.phone.includes(search);
+      name.toLowerCase().includes(search.toLowerCase()) ||
+      email.toLowerCase().includes(search.toLowerCase()) ||
+      phone.includes(search);
+
+    const userRole =
+      user.role?.toLowerCase() === "admin"
+        ? "Admin"
+        : "Customer";
 
     const matchesRole =
-      roleFilter === "All" || user.role === roleFilter;
+      roleFilter === "All" ||
+      userRole === roleFilter;
 
     return matchesSearch && matchesRole;
   });
+
+  // Delete user
+  const handleDelete = async () => {
+    if (!deleteUser) return;
+
+    try {
+      await api.delete(
+        `/api/users/${deleteUser._id || deleteUser.id}`
+      );
+
+      setUsers((prevUsers) =>
+        prevUsers.filter(
+          (user) =>
+            (user._id || user.id) !==
+            (deleteUser._id || deleteUser.id)
+        )
+      );
+
+      setDeleteUser(null);
+    } catch (error) {
+      console.error("Delete user error:", error);
+
+      setError(
+        error.response?.data?.message ||
+          "Failed to delete user."
+      );
+
+      setDeleteUser(null);
+    }
+  };
+
+  const totalUsers = users.length;
+
+  const customers = users.filter(
+    (user) => user.role?.toLowerCase() !== "admin"
+  ).length;
+
+  const activeUsers = users.filter(
+    (user) =>
+      user.status?.toLowerCase() === "active" ||
+      user.isActive === true ||
+      !user.status
+  ).length;
+
+  const formatDate = (date) => {
+    if (!date) return "N/A";
+
+    return new Date(date).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -80,6 +138,13 @@ const AdminUsers = () => {
           Manage registered users and their accounts.
         </p>
       </div>
+
+      {/* Error */}
+      {error && (
+        <div className="rounded-[5px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+          {error}
+        </div>
+      )}
 
       {/* Statistics */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -97,7 +162,7 @@ const AdminUsers = () => {
               </p>
 
               <p className="mt-1 text-2xl font-bold text-gray-900">
-                {users.length}
+                {totalUsers}
               </p>
             </div>
           </div>
@@ -110,7 +175,7 @@ const AdminUsers = () => {
           </p>
 
           <p className="mt-1 text-2xl font-bold text-gray-900">
-            {users.filter((user) => user.role === "Customer").length}
+            {customers}
           </p>
         </div>
 
@@ -121,7 +186,7 @@ const AdminUsers = () => {
           </p>
 
           <p className="mt-1 text-2xl font-bold text-gray-900">
-            {users.filter((user) => user.status === "Active").length}
+            {activeUsers}
           </p>
         </div>
       </div>
@@ -149,7 +214,9 @@ const AdminUsers = () => {
           {/* Role Filter */}
           <select
             value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
+            onChange={(e) =>
+              setRoleFilter(e.target.value)
+            }
             className="rounded-[5px] border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-700 outline-none transition focus:border-gray-400"
           >
             <option value="All">All Roles</option>
@@ -174,9 +241,6 @@ const AdminUsers = () => {
                   User
                 </th>
 
-                <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                  Phone
-                </th>
 
                 <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
                   Role
@@ -200,92 +264,124 @@ const AdminUsers = () => {
             {/* Table Body */}
             <tbody className="divide-y divide-gray-100">
 
-              {filteredUsers.length > 0 ? (
-                filteredUsers.map((user) => (
-                  <tr
-                    key={user.id}
-                    className="transition hover:bg-gray-50"
+              {loading ? (
+                <tr>
+                  <td
+                    colSpan="6"
+                    className="px-5 py-12 text-center text-sm text-gray-500"
                   >
+                    Loading users...
+                  </td>
+                </tr>
+              ) : filteredUsers.length > 0 ? (
+                filteredUsers.map((user) => {
+                  const userId = user._id || user.id;
 
-                    {/* User */}
-                    <td className="px-5 py-4">
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          {user.name}
-                        </p>
+                  const userRole =
+                    user.role?.toLowerCase() === "admin"
+                      ? "Admin"
+                      : "Customer";
 
-                        <p className="mt-1 text-sm text-gray-500">
-                          {user.email}
-                        </p>
-                      </div>
-                    </td>
+                  const userStatus =
+                    user.status ||
+                    (user.isActive === false
+                      ? "Inactive"
+                      : "Active");
 
-                    {/* Phone */}
-                    <td className="px-5 py-4 text-sm text-gray-600">
-                      {user.phone}
-                    </td>
+                  return (
+                    <tr
+                      key={userId}
+                      className="transition hover:bg-gray-50"
+                    >
 
-                    {/* Role */}
-                    <td className="px-5 py-4">
-                      <span
-                        className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
-                          user.role === "Admin"
-                            ? "bg-purple-100 text-purple-700"
-                            : "bg-blue-100 text-blue-700"
-                        }`}
-                      >
-                        {user.role}
-                      </span>
-                    </td>
+                      {/* User */}
+                      <td className="px-5 py-4">
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {user.name || "N/A"}
+                          </p>
 
-                    {/* Joined */}
-                    <td className="px-5 py-4 text-sm text-gray-600">
-                      {user.joined}
-                    </td>
+                          <p className="mt-1 text-sm text-gray-500">
+                            {user.email || "N/A"}
+                          </p>
+                        </div>
+                      </td>
 
-                    {/* Status */}
-                    <td className="px-5 py-4">
-                      <span className="inline-flex rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
-                        {user.status}
-                      </span>
-                    </td>
+                  
 
-                    {/* Actions */}
-                    <td className="px-5 py-4">
-                      <div className="flex justify-end gap-2">
-
-                        {/* View */}
-                        <Link
-                          to={`/admin/users/${user.id}`}
-                          className="rounded-[5px] p-2 text-gray-500 transition hover:bg-gray-100 hover:text-black"
-                          title="View"
+                      {/* Role */}
+                      <td className="px-5 py-4">
+                        <span
+                          className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
+                            userRole === "Admin"
+                              ? "bg-purple-100 text-purple-700"
+                              : "bg-blue-100 text-blue-700"
+                          }`}
                         >
-                          <Eye size={17} />
-                        </Link>
+                          {userRole}
+                        </span>
+                      </td>
 
-                        {/* Edit */}
-                        <Link
-                          to={`/admin/users/${user.id}/edit`}
-                          className="rounded-[5px] p-2 text-gray-500 transition hover:bg-gray-100 hover:text-black"
-                          title="Edit"
+                      {/* Joined */}
+                      <td className="px-5 py-4 text-sm text-gray-600">
+                        {formatDate(
+                          user.createdAt ||
+                            user.joined
+                        )}
+                      </td>
+
+                      {/* Status */}
+                      <td className="px-5 py-4">
+                        <span
+                          className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
+                            userStatus === "Active"
+                              ? "bg-green-100 text-green-700"
+                              : "bg-gray-100 text-gray-600"
+                          }`}
                         >
-                          <Edit size={17} />
-                        </Link>
+                          {userStatus}
+                        </span>
+                      </td>
 
-                        {/* Delete */}
-                        <button
-                          onClick={() => setDeleteUser(user)}
-                          className="rounded-[5px] p-2 text-gray-500 transition hover:bg-red-50 hover:text-red-600"
-                          title="Delete"
-                        >
-                          <Trash2 size={17} />
-                        </button>
+                      {/* Actions */}
+                      <td className="px-5 py-4">
+                        <div className="flex justify-end gap-2">
 
-                      </div>
-                    </td>
+                          {/* View */}
+                          <Link
+                            to={`/admin/users/${userId}`}
+                            className="rounded-[5px] p-2 text-gray-500 transition hover:bg-gray-100 hover:text-black"
+                            title="View"
+                          >
+                            <Eye size={17} />
+                          </Link>
 
-                  </tr>
-                ))
+                          {/* Edit */}
+                          <Link
+                            to={`/admin/users/${userId}/edit`}
+                            className="rounded-[5px] p-2 text-gray-500 transition hover:bg-gray-100 hover:text-black"
+                            title="Edit"
+                          >
+                            <Edit size={17} />
+                          </Link>
+
+                          {/* Delete */}
+                          <button
+                            onClick={() =>
+                              setDeleteUser(user)
+                            }
+                            className="rounded-[5px] p-2 text-gray-500 transition hover:bg-red-50 hover:text-red-600"
+                            title="Delete"
+                          >
+                            <Trash2 size={17} />
+                          </button>
+
+                        </div>
+                      </td>
+
+                    </tr>
+                  );
+                })
               ) : (
                 <tr>
                   <td
@@ -322,7 +418,9 @@ const AdminUsers = () => {
               </div>
 
               <button
-                onClick={() => setDeleteUser(null)}
+                onClick={() =>
+                  setDeleteUser(null)
+                }
                 className="rounded-[5px] p-1 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
               >
                 <X size={20} />
@@ -345,20 +443,16 @@ const AdminUsers = () => {
             <div className="mt-6 flex justify-end gap-3">
 
               <button
-                onClick={() => setDeleteUser(null)}
+                onClick={() =>
+                  setDeleteUser(null)
+                }
                 className="rounded-[5px] border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
               >
                 Cancel
               </button>
 
               <button
-                onClick={() => {
-                  console.log("Delete user:", deleteUser.id);
-
-                  // DELETE API will be added here
-
-                  setDeleteUser(null);
-                }}
+                onClick={handleDelete}
                 className="rounded-[5px] bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700"
               >
                 Delete

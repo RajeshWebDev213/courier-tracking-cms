@@ -1,371 +1,453 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { Search, Plus, Pencil, Trash2, X, Clock, PackageOpen } from "lucide-react";
+
 import {
-  Search,
-  Plus,
-  Edit,
-  Trash2,
-  X,
-  Wrench,
-} from "lucide-react";
+  getAllServices,
+  createService,
+  updateService,
+  deleteService as deleteServiceApi,
+} from "../../../services/ServiceServices";
+
+const EMPTY_FORM = {
+  name: "",
+  description: "",
+  price: "",
+  deliveryTime: "",
+  status: "Active",
+};
+
+const toBackendStatus = (s) => (s === "Active" ? "active" : "inactive");
+
+const inputCls =
+  "w-full rounded-[5px] border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition focus:border-black focus:ring-4 focus:ring-black/10";
 
 const AdminServices = () => {
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
   const [search, setSearch] = useState("");
-  const [deleteService, setDeleteService] = useState(null);
-  const [editingService, setEditingService] = useState(null);
+  const [statusFilter, setStatusFilter] = useState("All");
+
   const [showForm, setShowForm] = useState(false);
+  const [editingService, setEditingService] = useState(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [formData, setFormData] = useState(EMPTY_FORM);
 
-  const [services, setServices] = useState([
-    {
-      id: 1,
-      name: "Express Delivery",
-      description: "Fast and secure delivery service.",
-      price: "150",
-      deliveryTime: "1-2 Days",
-      status: "Active",
-    },
-    {
-      id: 2,
-      name: "Standard Delivery",
-      description: "Affordable delivery for regular shipments.",
-      price: "80",
-      deliveryTime: "3-5 Days",
-      status: "Active",
-    },
-    {
-      id: 3,
-      name: "Same Day Delivery",
-      description: "Priority delivery within the same day.",
-      price: "250",
-      deliveryTime: "Same Day",
-      status: "Active",
-    },
-  ]);
+  // ================= FETCH =================
 
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    price: "",
-    deliveryTime: "",
-    status: "Active",
+  const fetchServices = async () => {
+    try {
+      setLoading(true);
+      const response = await getAllServices();
+      const list = response.services || response.data || [];
+      setServices(
+        list.map((s) => ({
+          ...s,
+          status: s.status === "active" ? "Active" : "Inactive",
+        }))
+      );
+    } catch (error) {
+      console.error("Failed to fetch services:", error);
+      console.error("Server response:", error.response?.data);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchServices();
+  }, []);
+
+  // ================= DERIVED =================
+
+  const stats = useMemo(() => {
+    const active = services.filter((s) => s.status === "Active").length;
+    const prices = services.map((s) => Number(s.price) || 0);
+    const avg = prices.length
+      ? Math.round(prices.reduce((a, b) => a + b, 0) / prices.length)
+      : 0;
+    return { total: services.length, active, inactive: services.length - active, avg };
+  }, [services]);
+
+  const filteredServices = services.filter((s) => {
+    const matchesSearch = s.name?.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = statusFilter === "All" || s.status === statusFilter;
+    return matchesSearch && matchesStatus;
   });
 
-  // Filter services
-  const filteredServices = services.filter((service) =>
-    service.name.toLowerCase().includes(search.toLowerCase())
-  );
+  // ================= HANDLERS =================
 
-  // Open Add Service Form
-  const handleAdd = () => {
-    setEditingService(null);
-
-    setFormData({
-      name: "",
-      description: "",
-      price: "",
-      deliveryTime: "",
-      status: "Active",
-    });
-
-    setShowForm(true);
-  };
-
-  // Open Edit Service Form
-  const handleEdit = (service) => {
-    setEditingService(service);
-
-    setFormData({
-      name: service.name,
-      description: service.description,
-      price: service.price,
-      deliveryTime: service.deliveryTime,
-      status: service.status,
-    });
-
-    setShowForm(true);
-  };
-
-  // Handle Input Change
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  // Create / Update Service
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    if (editingService) {
-      setServices((prevServices) =>
-        prevServices.map((service) =>
-          service.id === editingService.id
-            ? {
-                ...service,
-                ...formData,
-              }
-            : service
-        )
-      );
-    } else {
-      const newService = {
-        id: Date.now(),
-        ...formData,
-      };
-
-      setServices((prevServices) => [
-        ...prevServices,
-        newService,
-      ]);
-    }
-
+  const closeForm = () => {
     setShowForm(false);
     setEditingService(null);
+    setFormData(EMPTY_FORM);
+  };
 
+  const handleAdd = () => {
+    setEditingService(null);
+    setFormData(EMPTY_FORM);
+    setShowForm(true);
+  };
+
+  const handleEdit = (service) => {
+    setEditingService(service);
     setFormData({
-      name: "",
-      description: "",
-      price: "",
-      deliveryTime: "",
-      status: "Active",
+      name: service.name || "",
+      description: service.description || "",
+      price: service.price ?? "",
+      deliveryTime: service.deliveryTime || "",
+      status: service.status === "Active" ? "Active" : "Inactive",
     });
+    setShowForm(true);
   };
 
-  // Delete Service
-  const handleDelete = () => {
-    setServices((prevServices) =>
-      prevServices.filter(
-        (service) => service.id !== deleteService.id
-      )
-    );
+  const handleChange = (e) =>
+    setFormData({ ...formData, [e.target.name]: e.target.value });
 
-    setDeleteService(null);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setSaving(true);
+      const data = {
+        name: formData.name,
+        description: formData.description,
+        price: Number(formData.price),
+        deliveryTime: formData.deliveryTime,
+        status: toBackendStatus(formData.status),
+      };
+
+      if (editingService) {
+        await updateService(editingService._id, data);
+      } else {
+        await createService(data);
+      }
+
+      await fetchServices();
+      closeForm();
+    } catch (error) {
+      console.error("Service save error:", error);
+      console.error("Server response:", error.response?.data);
+    } finally {
+      setSaving(false);
+    }
   };
+
+  const handleDelete = async (id) => {
+    try {
+      if (!id) {
+        console.error("Service ID not found");
+        return;
+      }
+      await deleteServiceApi(id);
+      await fetchServices();
+      setConfirmDeleteId(null);
+    } catch (error) {
+      console.error("Delete service error:", error);
+      console.error("Server response:", error.response?.data);
+    }
+  };
+
+  // ================= UI =================
+
+  const filters = [
+    { key: "All", label: "All", count: stats.total },
+    { key: "Active", label: "Active", count: stats.active },
+    { key: "Inactive", label: "Inactive", count: stats.inactive },
+  ];
 
   return (
-    <div className="min-h-full space-y-6 bg-white">
-
-      {/* ================= HEADER ================= */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-black">
-            Services
-          </h1>
-
-          <p className="mt-1 text-sm text-gray-500">
-            Manage courier services and delivery options.
-          </p>
-        </div>
-
-        <button
-          onClick={handleAdd}
-          className="flex w-full items-center justify-center gap-2 rounded-[5px] bg-black px-4 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800 sm:w-auto"
-        >
-          <Plus size={18} />
-          Add Service
-        </button>
-      </div>
-
-      {/* ================= SEARCH ================= */}
-      <div className="rounded-[5px] border border-gray-200 bg-white p-4">
-        <div className="relative w-full sm:max-w-md">
-          <Search
-            size={18}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-          />
-
-          <input
-            type="text"
-            placeholder="Search services..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-[5px] border border-gray-200 py-2.5 pl-10 pr-4 text-sm text-black outline-none transition focus:border-black"
-          />
-        </div>
-      </div>
-
-      {/* ================= SERVICE CARDS ================= */}
-      {filteredServices.length > 0 ? (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {filteredServices.map((service) => (
-            <div
-              key={service.id}
-              className="rounded-[5px] border border-gray-200 bg-white p-5 transition hover:border-gray-300 sm:p-6"
-            >
-              {/* Top Section */}
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-[5px] bg-gray-100 text-black">
-                  <Wrench size={21} />
-                </div>
-
-          <span
-  className={`rounded-[5px] px-3 py-1 text-xs font-medium ${
-    service.status === "Active"
-      ? "bg-green-100 text-green-700"
-      : "bg-gray-100 text-gray-600"
-  }`}
->
-  {service.status}
-</span>
-              </div>
-
-              {/* Service Details */}
-              <div className="mt-5">
-                <h2 className="text-lg font-semibold text-black">
-                  {service.name}
-                </h2>
-
-                <p className="mt-2 min-h-[48px] text-sm leading-6 text-gray-500">
-                  {service.description}
-                </p>
-              </div>
-
-              {/* Price & Delivery */}
-              <div className="mt-5 grid grid-cols-2 gap-4 border-t border-gray-100 pt-5">
-                <div>
-                  <p className="text-xs text-gray-500">
-                    Price
-                  </p>
-
-                  <p className="mt-1 font-semibold text-black">
-                    ₹{service.price}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-xs text-gray-500">
-                    Delivery
-                  </p>
-
-                  <p className="mt-1 font-semibold text-black">
-                    {service.deliveryTime}
-                  </p>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="mt-5 flex justify-end gap-2 border-t border-gray-100 pt-4">
-                <button
-                  onClick={() => handleEdit(service)}
-                  className="rounded-[5px] p-2 text-gray-500 transition hover:bg-gray-100 hover:text-black"
-                  title="Edit Service"
-                >
-                  <Edit size={17} />
-                </button>
-
-                <button
-                  onClick={() => setDeleteService(service)}
-                  className="rounded-[5px] p-2 text-gray-500 transition hover:bg-gray-100 hover:text-red-600"
-                  title="Delete Service"
-                >
-                  <Trash2 size={17} />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        /* ================= EMPTY STATE ================= */
-        <div className="rounded-[5px] border border-gray-200 bg-white py-14 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[5px] bg-gray-100 text-gray-500">
-            <Wrench size={22} />
+    <div className="min-h-full bg-gray-50 p-4 sm:p-8">
+      <div className="mx-auto max-w-5xl">
+        {/* Header */}
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-semibold tracking-tight text-gray-900">
+              Delivery services
+            </h1>
+            <p className="mt-1.5 max-w-md text-sm leading-6 text-gray-500">
+              The shipping options customers can choose at checkout, with their
+              price and delivery time.
+            </p>
           </div>
 
-          <h3 className="mt-4 text-sm font-semibold text-black">
-            No services found
-          </h3>
-
-          <p className="mt-1 text-sm text-gray-500">
-            Try searching with a different service name.
-          </p>
+          <button
+            onClick={handleAdd}
+            className="inline-flex items-center justify-center gap-2 rounded-[5px] bg-black px-4 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+          >
+            <Plus size={16} />
+            Add service
+          </button>
         </div>
-      )}
 
-      {/* ================= ADD / EDIT MODAL ================= */}
+        {/* Summary strip */}
+        <dl className="mt-8 grid grid-cols-3 divide-x divide-gray-200 overflow-hidden rounded-[5px] border border-gray-200 bg-white">
+          {[
+            { label: "Services", value: stats.total },
+            { label: "Live at checkout", value: stats.active },
+            { label: "Average price", value: `₹${stats.avg}` },
+          ].map((s) => (
+            <div key={s.label} className="px-4 py-4 sm:px-6">
+              <dt className="text-xs text-gray-500">{s.label}</dt>
+              <dd className="mt-1 text-xl font-semibold tabular-nums text-gray-900 sm:text-2xl">
+                {s.value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+
+        {/* Toolbar */}
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="inline-flex self-start rounded-[5px] bg-gray-200/70 p-1">
+            {filters.map((f) => (
+              <button
+                key={f.key}
+                onClick={() => setStatusFilter(f.key)}
+                className={`rounded-[5px] px-3 py-1.5 text-sm font-medium transition ${
+                  statusFilter === f.key
+                    ? "bg-white text-gray-900"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                {f.label}
+                <span className="ml-1.5 tabular-nums text-gray-400">{f.count}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="relative w-full sm:max-w-xs">
+            <Search
+              size={16}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+            />
+            <input
+              type="text"
+              placeholder="Search by name"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className={`${inputCls} pl-10`}
+            />
+          </div>
+        </div>
+
+        {/* List */}
+        <div className="mt-4 overflow-hidden rounded-[5px] border border-gray-200 bg-white">
+          {loading ? (
+            <ul className="divide-y divide-gray-100">
+              {[0, 1, 2].map((i) => (
+                <li key={i} className="flex animate-pulse items-center gap-4 p-5">
+                  <div className="h-10 w-10 rounded-[5px] bg-gray-100" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3.5 w-40 rounded-[5px] bg-gray-100" />
+                    <div className="h-3 w-64 max-w-full rounded-[5px] bg-gray-100" />
+                  </div>
+                  <div className="h-6 w-16 rounded-[5px] bg-gray-100" />
+                </li>
+              ))}
+            </ul>
+          ) : filteredServices.length > 0 ? (
+            <ul className="divide-y divide-gray-100">
+              {filteredServices.map((service) => {
+                const isActive = service.status === "Active";
+                const confirming = confirmDeleteId === service._id;
+
+                return (
+                  <li key={service._id} className="p-4 sm:px-6 sm:py-5">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+                      {/* Name + description */}
+                      <div className="min-w-0 flex-1">
+                        <h2
+                            className={`truncate text-base font-medium text-gray-900`}
+                          >
+                            {service.name}
+                          </h2>
+                        <p className="mt-1 line-clamp-2 text-sm leading-6 text-gray-500">
+                          {service.description}
+                        </p>
+                      </div>
+
+                      {/* Delivery time */}
+                      <div className="flex items-center gap-1.5 text-sm text-gray-600 sm:w-28">
+                        <Clock size={15} className="text-gray-400" />
+                        {service.deliveryTime}
+                      </div>
+
+                      {/* Status */}
+                      <div className="sm:w-24">
+                        <span
+                          className={`inline-flex items-center rounded-[5px] px-2.5 py-1 text-xs font-medium ${
+                            isActive
+                              ? "bg-green-100 text-green-700"
+                              : "bg-red-100 text-red-700"
+                          }`}
+                        >
+                          {service.status}
+                        </span>
+                      </div>
+
+                      {/* Price */}
+                      <div className="text-xl font-semibold tabular-nums text-gray-900 sm:w-20 sm:text-right">
+                        ₹{service.price}
+                      </div>
+
+                      {/* Controls */}
+                      <div className="flex items-center justify-end gap-3 sm:pl-0">
+                        <div className="flex items-center">
+                          <button
+                            onClick={() => handleEdit(service)}
+                            className="rounded-[5px] p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"
+                            title="Edit service"
+                            aria-label={`Edit ${service.name}`}
+                          >
+                            <Pencil size={16} />
+                          </button>
+                          <button
+                            onClick={() => setConfirmDeleteId(service._id)}
+                            className="rounded-[5px] p-2 text-gray-500 transition hover:bg-red-50 hover:text-red-600"
+                            title="Delete service"
+                            aria-label={`Delete ${service.name}`}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Inline delete confirmation */}
+                    {confirming && (
+                      <div className="mt-4 flex flex-col gap-3 rounded-[5px] border border-red-200 bg-red-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-sm text-red-800">
+                          Delete <span className="font-medium">{service.name}</span>?
+                          Customers will no longer see it, and this can't be undone.
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setConfirmDeleteId(null)}
+                            className="rounded-[5px] bg-white px-3 py-1.5 text-sm font-medium text-gray-700 ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50"
+                          >
+                            Keep
+                          </button>
+                          <button
+                            onClick={() => handleDelete(service._id)}
+                            className="rounded-[5px] bg-red-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-red-700"
+                          >
+                            Delete service
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <div className="px-6 py-16 text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[5px] bg-gray-100 text-gray-400">
+                <PackageOpen size={22} />
+              </div>
+              <h3 className="mt-4 text-sm font-medium text-gray-900">
+                {services.length === 0 ? "No services yet" : "No matching services"}
+              </h3>
+              <p className="mt-1 text-sm text-gray-500">
+                {services.length === 0
+                  ? "Add your first delivery option to show it at checkout."
+                  : "Try a different name or switch the status filter."}
+              </p>
+              {services.length === 0 && (
+                <button
+                  onClick={handleAdd}
+                  className="mt-5 inline-flex items-center gap-2 rounded-[5px] bg-black px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
+                >
+                  <Plus size={16} />
+                  Add service
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ================= SLIDE-OVER FORM ================= */}
+
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 px-4 py-6">
-          <div className="my-auto w-full max-w-lg rounded-[5px] bg-white">
+        <div className="fixed inset-0 z-50 flex justify-end">
+          <div
+            className="absolute inset-0 bg-gray-900/40"
+            onClick={closeForm}
+            aria-hidden="true"
+          />
 
-            {/* Modal Header */}
-            <div className="flex items-start justify-between border-b border-gray-200 px-5 py-4 sm:px-6">
+          <aside
+            role="dialog"
+            aria-modal="true"
+            aria-label={editingService ? "Edit service" : "Add service"}
+            className="relative flex h-full w-full max-w-md flex-col bg-white"
+          >
+            <div className="flex items-start justify-between border-b border-gray-200 px-6 py-5">
               <div>
-                <h2 className="text-lg font-semibold text-black">
-                  {editingService
-                    ? "Edit Service"
-                    : "Add Service"}
+                <h2 className="text-lg font-semibold text-gray-900">
+                  {editingService ? "Edit service" : "Add service"}
                 </h2>
-
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-0.5 text-sm text-gray-500">
                   {editingService
-                    ? "Update the service information."
-                    : "Create a new courier service."}
+                    ? "Changes appear at checkout right away."
+                    : "Set the price and delivery time customers will see."}
                 </p>
               </div>
-
               <button
-                onClick={() => {
-                  setShowForm(false);
-                  setEditingService(null);
-                }}
-                className="rounded-[5px] p-1 text-gray-400 transition hover:bg-gray-100 hover:text-black"
+                onClick={closeForm}
+                className="rounded-[5px] p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-900"
                 aria-label="Close"
               >
                 <X size={20} />
               </button>
             </div>
 
-            {/* Form */}
-            <form onSubmit={handleSubmit}>
-              <div className="space-y-5 p-5 sm:p-6">
-
-                {/* Service Name */}
+            <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+              <div className="flex-1 space-y-5 overflow-y-auto px-6 py-6">
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
-                    Service Name
+                  <label htmlFor="name" className="mb-1.5 block text-sm font-medium text-gray-700">
+                    Name
                   </label>
-
                   <input
+                    id="name"
                     type="text"
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    placeholder="Express Delivery"
+                    placeholder="Express delivery"
                     required
-                    className="w-full rounded-[5px] border border-gray-200 px-4 py-2.5 text-sm text-black outline-none transition focus:border-black"
+                    className={inputCls}
                   />
                 </div>
 
-                {/* Description */}
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
+                  <label htmlFor="description" className="mb-1.5 block text-sm font-medium text-gray-700">
                     Description
                   </label>
-
                   <textarea
+                    id="description"
                     name="description"
                     value={formData.description}
                     onChange={handleChange}
-                    placeholder="Enter service description"
+                    placeholder="Parcels arrive the next business day"
                     rows="3"
                     required
-                    className="w-full resize-none rounded-[5px] border border-gray-200 px-4 py-2.5 text-sm text-black outline-none transition focus:border-black"
+                    className={`${inputCls} resize-none`}
                   />
                 </div>
 
-                {/* Price & Delivery Time */}
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-700">
+                    <label htmlFor="price" className="mb-1.5 block text-sm font-medium text-gray-700">
                       Price
                     </label>
-
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-gray-500">
                         ₹
                       </span>
-
                       <input
+                        id="price"
                         type="number"
                         name="price"
                         value={formData.price}
@@ -373,129 +455,87 @@ const AdminServices = () => {
                         placeholder="150"
                         min="0"
                         required
-                        className="w-full rounded-[5px] border border-gray-200 py-2.5 pl-8 pr-4 text-sm text-black outline-none transition focus:border-black"
+                        className={`${inputCls} pl-8`}
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-700">
-                      Delivery Time
+                    <label htmlFor="deliveryTime" className="mb-1.5 block text-sm font-medium text-gray-700">
+                      Delivery time
                     </label>
-
                     <input
+                      id="deliveryTime"
                       type="text"
                       name="deliveryTime"
                       value={formData.deliveryTime}
                       onChange={handleChange}
-                      placeholder="1-2 Days"
+                      placeholder="1-2 days"
                       required
-                      className="w-full rounded-[5px] border border-gray-200 px-4 py-2.5 text-sm text-black outline-none transition focus:border-black"
+                      className={inputCls}
                     />
                   </div>
                 </div>
 
-                {/* Status */}
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
-                    Status
-                  </label>
-
-                  <select
-                    name="status"
-                    value={formData.status}
-                    onChange={handleChange}
-                    className="w-full rounded-[5px] border border-gray-200 bg-white px-4 py-2.5 text-sm text-black outline-none transition focus:border-black"
-                  >
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                  </select>
-                </div>
+                <fieldset>
+                  <legend className="mb-1.5 text-sm font-medium text-gray-700">
+                    Availability
+                  </legend>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { value: "Active", hint: "Shown at checkout" },
+                      { value: "Inactive", hint: "Hidden from customers" },
+                    ].map((opt) => (
+                      <label
+                        key={opt.value}
+                        className={`cursor-pointer rounded-[5px] border px-3.5 py-3 transition ${
+                          formData.status === opt.value
+                            ? "border-black bg-gray-100 ring-4 ring-black/10"
+                            : "border-gray-300 hover:border-gray-400"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="status"
+                          value={opt.value}
+                          checked={formData.status === opt.value}
+                          onChange={handleChange}
+                          className="sr-only"
+                        />
+                        <span className="block text-sm font-medium text-gray-900">
+                          {opt.value}
+                        </span>
+                        <span className="mt-0.5 block text-xs text-gray-500">
+                          {opt.hint}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
               </div>
 
-              {/* Modal Footer */}
-              <div className="flex flex-col-reverse gap-3 border-t border-gray-200 px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
-
+              <div className="flex gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4">
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowForm(false);
-                    setEditingService(null);
-                  }}
-                  className="w-full rounded-[5px] border border-gray-200 px-5 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 sm:w-auto"
+                  onClick={closeForm}
+                  className="flex-1 rounded-[5px] bg-white px-4 py-2.5 text-sm font-medium text-gray-700 ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50"
                 >
                   Cancel
                 </button>
-
                 <button
                   type="submit"
-                  className="w-full rounded-[5px] bg-red px-5 py-2.5 text-sm font-medium text-white bg-black sm:w-auto"
+                  disabled={saving}
+                  className="flex-1 rounded-[5px] bg-black px-4 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800 disabled:opacity-60"
                 >
-                  {editingService
-                    ? "Update Service"
-                    : "Create Service"}
+                  {saving
+                    ? "Saving..."
+                    : editingService
+                    ? "Save changes"
+                    : "Add service"}
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* ================= DELETE MODAL ================= */}
-      {deleteService && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-sm rounded-[5px] bg-white p-5 sm:p-6">
-
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-black">
-                  Delete Service?
-                </h3>
-
-                <p className="mt-1 text-sm text-gray-500">
-                  This action cannot be undone.
-                </p>
-              </div>
-
-              <button
-                onClick={() => setDeleteService(null)}
-                className="rounded-[5px] p-1 text-gray-400 transition hover:bg-gray-100 hover:text-black"
-                aria-label="Close"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            {/* Selected Service */}
-            <div className="mt-5 rounded-[5px] bg-gray-50 p-4">
-              <p className="font-semibold text-black">
-                {deleteService.name}
-              </p>
-
-              <p className="mt-1 text-sm text-gray-500">
-                ₹{deleteService.price} ·{" "}
-                {deleteService.deliveryTime}
-              </p>
-            </div>
-
-            {/* Delete Actions */}
-            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-
-              <button
-                onClick={() => setDeleteService(null)}
-                className="w-full rounded-[5px] border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 sm:w-auto"
-              >
-                Cancel
-              </button>
-
-              <button
-                onClick={handleDelete}
-                className="w-full rounded-[5px] bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition sm:w-auto"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
+          </aside>
         </div>
       )}
     </div>

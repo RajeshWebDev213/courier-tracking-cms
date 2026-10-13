@@ -62,7 +62,7 @@ const login = async (data) => {
   const response = await loginUser(data);
 
   console.log("LOGIN RESPONSE:", response);
-
+   console.log("ROLE VALUE:", JSON.stringify(response.user?.role), response.user);
   if (response.token) {
     sessionStorage.setItem("token", response.token);
   }

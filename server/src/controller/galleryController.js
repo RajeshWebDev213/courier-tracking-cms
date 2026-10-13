@@ -89,6 +89,120 @@ export const createGallery = async (req, res) => {
     });
   }
 };
+export const updateGallery = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, section } = req.body;
+
+    const gallery = await Gallery.findById(id);
+
+    if (!gallery) {
+      return res.status(404).json({
+        success: false,
+        message: "Gallery not found",
+      });
+    }
+
+    // Update title
+    if (title !== undefined) {
+      const trimmedTitle = title.trim();
+
+      if (!trimmedTitle) {
+        return res.status(400).json({
+          success: false,
+          message: "Title cannot be empty",
+        });
+      }
+
+      gallery.title = trimmedTitle;
+    }
+
+    // Update section
+    if (section !== undefined) {
+      const trimmedSection = section.trim();
+
+      if (!trimmedSection) {
+        return res.status(400).json({
+          success: false,
+          message: "Section cannot be empty",
+        });
+      }
+
+      gallery.section = trimmedSection;
+    }
+
+    // Update image only if a new image was uploaded
+    if (req.file) {
+      console.log("New image received:", req.file.originalname);
+
+      const webBuffer = await sharp(req.file.buffer)
+        .resize(1200, 1200, {
+          fit: "inside",
+          withoutEnlargement: true,
+        })
+        .webp({ quality: 80 })
+        .toBuffer();
+
+      const result = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder: "courier-website/gallery",
+            resource_type: "image",
+            format: "webp",
+          },
+          (error, result) => {
+            if (error) {
+              reject(error);
+            } else {
+              resolve(result);
+            }
+          }
+        );
+
+        uploadStream.end(webBuffer);
+      });
+
+      // Save old Cloudinary ID
+      const oldPublicId = gallery.cloudinaryPublicId;
+
+      // Update MongoDB with new image
+      gallery.image = result.secure_url;
+      gallery.cloudinaryPublicId = result.public_id;
+
+      await gallery.save();
+
+      // Delete old image
+      if (oldPublicId) {
+        try {
+          await cloudinary.uploader.destroy(oldPublicId);
+        } catch (error) {
+          console.error(
+            "Failed to delete old Cloudinary image:",
+            error.message
+          );
+        }
+      }
+    } else {
+      console.log("No new image received");
+
+      await gallery.save();
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Gallery updated successfully",
+      gallery,
+    });
+  } catch (error) {
+    console.error("Gallery update error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to update gallery",
+      error: error.message,
+    });
+  }
+};
 export const deleteGallery = async(req,res)=>{
     try{
        const {id} = req.params

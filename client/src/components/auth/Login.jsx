@@ -5,59 +5,102 @@ import useAuth from "../../hooks/useAuth";
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, isAuthenticated, loading: authLoading } = useAuth();
+
+  const {
+    login,
+    isAuthenticated,
+    loading: authLoading,
+  } = useAuth();
 
   const redirectTo = location.state?.from?.pathname || "/";
 
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [formData, setFormData] = useState({ email: "", password: "" });
 
-  // Already logged in -> don't show the login form
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
+
+  // Already logged in
   if (!authLoading && isAuthenticated) {
+    const storedUser = JSON.parse(
+      sessionStorage.getItem("user") || "null"
+    );
+
+    if (storedUser?.role === "admin") {
+      return <Navigate to="/admin" replace />;
+    }
+
     return <Navigate to={redirectTo} replace />;
   }
 
+  // Handle input change
   const handleChange = (e) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+
     setError("");
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // Handle login
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    const email = formData.email.trim();
-    const { password } = formData;
+  const email = formData.email.trim();
+  const { password } = formData;
 
-    if (!email || !password) {
-      return setError("Please enter your email and password.");
-    }
-    if (!/^\S+@\S+\.\S+$/.test(email)) {
-      return setError("Please enter a valid email address.");
-    }
+  if (!email || !password) {
+    setError("Please enter your email and password.");
+    return;
+  }
 
-    setError("");
-    setLoading(true);
+  if (!/^\S+@\S+\.\S+$/.test(email)) {
+    setError("Please enter a valid email address.");
+    return;
+  }
 
-    try {
-      await login({ email, password });
-      navigate(redirectTo, { replace: true });
-    } catch (err) {
-      console.error("LOGIN ERROR:", err);
-      setError(
-        err.response?.data?.message || // raw axios error
-          err.message || // error thrown by AuthServices / AuthContext
-          "Login failed. Please try again."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+  setError("");
+  setLoading(true);
+
+ try {
+  const response = await login({
+    email,
+    password,
+  });
+
+  console.log("LOGIN RESPONSE:", response);
+  console.log("LOGIN ROLE:", response?.user?.role);
+
+  if (response?.user?.role === "admin") {
+    console.log("GOING TO ADMIN");
+    navigate("/admin", { replace: true });
+    return;
+  }
+
+  console.log("GOING TO USER");
+  navigate(redirectTo, { replace: true });
+
+} catch (err) {
+  console.error("LOGIN ERROR:", err);
+
+  setError(
+    err.response?.data?.message ||
+      err.message ||
+      "Login failed. Please try again."
+  );
+} finally {
+  setLoading(false);
+}
+};
 
   return (
     <main className="min-h-screen bg-white px-5 py-16 sm:py-20">
       <div className="mx-auto w-full max-w-md">
+
         {/* Logo */}
         <Link to="/" className="flex justify-center mb-10">
           <span
@@ -73,6 +116,7 @@ const Login = () => {
           <h1 className="text-3xl sm:text-4xl font-light tracking-tight">
             Welcome back
           </h1>
+
           <p className="mt-3 text-sm text-gray-500">
             Sign in to continue to your account.
           </p>
@@ -89,7 +133,12 @@ const Login = () => {
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-5"
+          noValidate
+        >
+
           {/* Email */}
           <div>
             <label
@@ -98,6 +147,7 @@ const Login = () => {
             >
               Email address
             </label>
+
             <input
               id="email"
               type="email"
@@ -120,6 +170,7 @@ const Login = () => {
               >
                 Password
               </label>
+
               <Link
                 to="/forgot-password"
                 className="text-xs text-gray-500 hover:text-black"
@@ -140,9 +191,12 @@ const Login = () => {
                 placeholder="Enter your password"
                 className="w-full rounded-xl border border-gray-200 px-4 py-3.5 pr-12 text-sm outline-none transition focus:border-black focus:ring-1 focus:ring-black disabled:bg-gray-50"
               />
+
               <button
                 type="button"
-                onClick={() => setShowPassword((s) => !s)}
+                onClick={() =>
+                  setShowPassword((prev) => !prev)
+                }
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-500 hover:text-black"
               >
                 {showPassword ? "Hide" : "Show"}
@@ -163,10 +217,14 @@ const Login = () => {
         {/* Signup */}
         <p className="mt-8 text-center text-sm text-gray-500">
           Don't have an account?{" "}
-          <Link to="/signup" className="font-medium text-black hover:underline">
+          <Link
+            to="/signup"
+            className="font-medium text-black hover:underline"
+          >
             Create account
           </Link>
         </p>
+
       </div>
     </main>
   );

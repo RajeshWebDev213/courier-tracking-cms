@@ -1,7 +1,7 @@
 import api from "./api";
 
 // Get tracking details by tracking number
-export const getTracking = async (trackingNumber) => {
+export const getTrackingDetails = async (trackingNumber) => {
   const res = await api.get(`/api/tracking/${trackingNumber}`);
   return res.data;
 };

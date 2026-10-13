@@ -1,435 +1,733 @@
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   Package,
   MapPin,
   User,
-  Calendar,
-  Weight,
   Phone,
-  Mail,
-  Clock,
   CheckCircle,
-  Truck,
+  Loader2,
 } from "lucide-react";
+
+import {
+  getShipmentById,
+} from "../../../services/ShipmentServices";
+
+import {
+  getTrackingDetails,
+} from "../../../services/TrackingServices";
 
 const AdminShipmentDetails = () => {
   const { id } = useParams();
 
-  // Temporary data - replace with API data later
-  const shipment = {
-    trackingNumber: "CR102458",
-    status: "In Transit",
+  const [shipment, setShipment] = useState(null);
+  const [trackingHistory, setTrackingHistory] = useState([]);
 
-    customer: {
-      name: "Rahul Kumar",
-      email: "rahul@example.com",
-      phone: "+91 98765 43210",
-    },
+  const [loading, setLoading] = useState(true);
+  const [trackingLoading, setTrackingLoading] = useState(false);
+  const [error, setError] = useState("");
 
-    origin: "Hyderabad",
-    destination: "Mumbai",
+  // =====================================================
+  // TRACKING STEPS
+  // =====================================================
 
-    packageType: "Document",
-    weight: "2.5 kg",
-    createdAt: "05 Oct 2026",
+  const trackingSteps = [
+    "Booked",
+    "Picked Up",
+    "In Transit",
+    "Out for Delivery",
+    "Delivered",
+  ];
 
-    trackingHistory: [
-      {
-        status: "Shipment Picked Up",
-        location: "Hyderabad",
-        date: "05 Oct 2026",
-        time: "09:30 AM",
-        completed: true,
-      },
-      {
-        status: "In Transit",
-        location: "Hyderabad Hub",
-        date: "05 Oct 2026",
-        time: "01:15 PM",
-        completed: true,
-      },
-      {
-        status: "Arrived at Mumbai Hub",
-        location: "Mumbai",
-        date: "06 Oct 2026",
-        time: "08:30 AM",
-        completed: false,
-      },
-      {
-        status: "Out for Delivery",
-        location: "Mumbai",
-        date: "-",
-        time: "-",
-        completed: false,
-      },
-      {
-        status: "Delivered",
-        location: "Mumbai",
-        date: "-",
-        time: "-",
-        completed: false,
-      },
-    ],
+  // =====================================================
+  // STATUS STYLE
+  // =====================================================
+
+  const getStatusStyle = (status) => {
+    const styles = {
+      booked:
+        "border-gray-300 bg-gray-100 text-gray-700",
+
+      "picked up":
+        "border-yellow-300 bg-yellow-100 text-yellow-700",
+
+      "in transit":
+        "border-blue-300 bg-blue-100 text-blue-700",
+
+      "out for delivery":
+        "border-purple-300 bg-purple-100 text-purple-700",
+
+      delivered:
+        "border-green-300 bg-green-100 text-green-700",
+
+      cancelled:
+        "border-red-300 bg-red-100 text-red-700",
+    };
+
+    return (
+      styles[status?.trim().toLowerCase()] ||
+      "border-gray-300 bg-gray-100 text-gray-700"
+    );
   };
 
-  // Status colors
-  const getStatusStyle = (shipmentStatus) => {
-    switch (shipmentStatus) {
-      case "Delivered":
-        return "bg-green-100 text-green-700";
+  // =====================================================
+  // STATUS INDEX
+  // =====================================================
 
-      case "In Transit":
-        return "bg-blue-100 text-blue-700";
+  const getStatusIndex = (status) => {
+    return trackingSteps.findIndex(
+      (step) =>
+        step.toLowerCase() ===
+        status?.trim().toLowerCase()
+    );
+  };
 
-      case "Pending":
-        return "bg-yellow-100 text-yellow-700";
+  // =====================================================
+  // FETCH SHIPMENT
+  // =====================================================
 
-      default:
-        return "bg-gray-100 text-gray-600";
+  useEffect(() => {
+    const fetchShipment = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const response = await getShipmentById(id);
+
+        const shipmentData =
+          response?.shipment ||
+          response?.data?.shipment;
+
+        if (!shipmentData) {
+          setError("Shipment not found.");
+          return;
+        }
+
+        setShipment(shipmentData);
+
+        // Fetch tracking history
+        if (shipmentData.trackingNumber) {
+          fetchTrackingHistory(
+            shipmentData.trackingNumber
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Admin shipment details error:",
+          error
+        );
+
+        setError(
+          error.response?.data?.message ||
+            "Failed to fetch shipment details."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchShipment();
+    }
+  }, [id]);
+
+  // =====================================================
+  // FETCH TRACKING HISTORY
+  // =====================================================
+
+  const fetchTrackingHistory = async (trackingNumber) => {
+    try {
+      setTrackingLoading(true);
+
+      const response =
+        await getTrackingDetails(trackingNumber);
+
+      console.log(
+        "Admin Tracking Response:",
+        response
+      );
+
+      const history =
+        response?.trackingHistory ||
+        response?.data?.trackingHistory ||
+        response?.tracking ||
+        response?.data?.tracking ||
+        response?.updates ||
+        [];
+
+      setTrackingHistory(
+        Array.isArray(history) ? history : []
+      );
+    } catch (error) {
+      console.error(
+        "Tracking history error:",
+        error
+      );
+
+      setTrackingHistory([]);
+    } finally {
+      setTrackingLoading(false);
     }
   };
 
-  return (
-    <div className="space-y-6 bg-white">
+  // =====================================================
+  // LOADING
+  // =====================================================
 
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+  if (loading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="flex items-center gap-2 text-sm text-gray-500">
+          <Loader2
+            size={18}
+            className="animate-spin"
+          />
+          Loading shipment details...
+        </div>
+      </div>
+    );
+  }
+
+  // =====================================================
+  // ERROR
+  // =====================================================
+
+  if (error || !shipment) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center">
+        <p className="text-sm text-red-500">
+          {error || "Shipment not found."}
+        </p>
+
+        <Link
+          to="/admin/shipments"
+          className="mt-4 rounded-[5px] bg-black px-5 py-2.5 text-sm font-medium text-white"
+        >
+          Back to Shipments
+        </Link>
+      </div>
+    );
+  }
+
+  const currentIndex = getStatusIndex(
+    shipment.status
+  );
+
+  return (
+    <div className="min-h-screen bg-white">
+
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
+
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+
+        <div>
+          <Link
+            to="/admin/shipments"
+            className="mb-3 inline-flex items-center gap-2 text-sm text-gray-500 transition hover:text-black"
+          >
+            <ArrowLeft size={16} />
+            Back to Shipments
+          </Link>
+
+          <h1 className="text-2xl font-bold tracking-tight text-black">
+            Shipment Details
+          </h1>
+
+          <p className="mt-1 text-sm text-gray-500">
+            View shipment information and tracking history.
+          </p>
+        </div>
+
+        {/* TRACKING NUMBER */}
+
+        <div className="rounded-[5px] border border-gray-200 bg-white px-5 py-4 shadow-sm">
+          <p className="text-xs text-gray-500">
+            Tracking Number
+          </p>
+
+          <p className="mt-1 font-semibold text-black">
+            {shipment.trackingNumber || "N/A"}
+          </p>
+        </div>
+      </div>
+
+      {/* =====================================================
+          CURRENT STATUS
+      ===================================================== */}
+
+      <div className="mb-6 rounded-[5px] border border-gray-200 bg-white p-6 shadow-sm">
+
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+
+          <div className="flex items-center gap-4">
+
+            <div
+              className={`flex h-11 w-11 items-center justify-center rounded-[5px] ${getStatusStyle(
+                shipment.status
+              )}`}
+            >
+              <Package size={20} />
+            </div>
+
+            <div>
+              <p className="text-sm text-gray-500">
+                Current Shipment Status
+              </p>
+
+              <h2 className="mt-1 text-lg font-semibold text-black">
+                {shipment.status || "Booked"}
+              </h2>
+            </div>
+          </div>
+
+          <span
+            className={`w-fit rounded-full border px-4 py-2 text-sm font-semibold ${getStatusStyle(
+              shipment.status
+            )}`}
+          >
+            {shipment.status || "Booked"}
+          </span>
+        </div>
+      </div>
+
+      {/* =====================================================
+          SENDER / RECEIVER
+      ===================================================== */}
+
+      <div className="grid gap-6 lg:grid-cols-2">
+
+        {/* SENDER */}
+
+        <div className="rounded-[5px] border border-gray-200 bg-white p-6 shadow-sm">
+
+          <div className="flex items-center gap-3">
+
+            <div className="flex h-10 w-10 items-center justify-center rounded-[5px] bg-blue-50">
+              <User
+                size={19}
+                className="text-blue-600"
+              />
+            </div>
+
+            <div>
+              <h2 className="text-lg font-semibold text-black">
+                Sender
+              </h2>
+
+              <p className="text-sm text-gray-500">
+                Sender information
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6 space-y-4 text-sm">
+
+            <div>
+              <p className="text-gray-500">
+                Name
+              </p>
+
+              <p className="mt-1 font-medium text-gray-800">
+                {shipment.sender?.name || "N/A"}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-gray-500">
+                Phone
+              </p>
+
+              <div className="mt-1 flex items-center gap-2 font-medium text-gray-800">
+                <Phone size={15} />
+                {shipment.sender?.phone || "N/A"}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-gray-500">
+                Address
+              </p>
+
+              <p className="mt-1 font-medium text-gray-800">
+                {shipment.sender?.address || "N/A"}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-gray-500">
+                Location
+              </p>
+
+              <p className="mt-1 font-medium text-gray-800">
+                {shipment.sender?.city || "N/A"}
+                {shipment.sender?.state
+                  ? `, ${shipment.sender.state}`
+                  : ""}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-gray-500">
+                Pincode
+              </p>
+
+              <p className="mt-1 font-medium text-gray-800">
+                {shipment.sender?.pincode || "N/A"}
+              </p>
+            </div>
+
+          </div>
+        </div>
+
+        {/* RECEIVER */}
+
+        <div className="rounded-[5px] border border-gray-200 bg-white p-6 shadow-sm">
+
+          <div className="flex items-center gap-3">
+
+            <div className="flex h-10 w-10 items-center justify-center rounded-[5px] bg-purple-50">
+              <User
+                size={19}
+                className="text-purple-600"
+              />
+            </div>
+
+            <div>
+              <h2 className="text-lg font-semibold text-black">
+                Receiver
+              </h2>
+
+              <p className="text-sm text-gray-500">
+                Receiver information
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6 space-y-4 text-sm">
+
+            <div>
+              <p className="text-gray-500">
+                Name
+              </p>
+
+              <p className="mt-1 font-medium text-gray-800">
+                {shipment.receiver?.name || "N/A"}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-gray-500">
+                Phone
+              </p>
+
+              <div className="mt-1 flex items-center gap-2 font-medium text-gray-800">
+                <Phone size={15} />
+                {shipment.receiver?.phone || "N/A"}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-gray-500">
+                Address
+              </p>
+
+              <p className="mt-1 font-medium text-gray-800">
+                {shipment.receiver?.address || "N/A"}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-gray-500">
+                Location
+              </p>
+
+              <p className="mt-1 font-medium text-gray-800">
+                {shipment.receiver?.city || "N/A"}
+                {shipment.receiver?.state
+                  ? `, ${shipment.receiver.state}`
+                  : ""}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-gray-500">
+                Pincode
+              </p>
+
+              <p className="mt-1 font-medium text-gray-800">
+                {shipment.receiver?.pincode || "N/A"}
+              </p>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      {/* =====================================================
+          PACKAGE DETAILS
+      ===================================================== */}
+
+      <div className="mt-6 rounded-[5px] border border-gray-200 bg-white p-6 shadow-sm">
 
         <div className="flex items-center gap-3">
 
-          <Link
-            to="/admin/shipments"
-            className="rounded-[5px] border border-gray-200 p-2 text-gray-600 transition hover:bg-gray-50 hover:text-black"
-          >
-            <ArrowLeft size={20} />
-          </Link>
+          <div className="flex h-10 w-10 items-center justify-center rounded-[5px] bg-gray-100">
+            <Package
+              size={19}
+              className="text-black"
+            />
+          </div>
 
           <div>
-            <h2 className="text-2xl font-bold text-black">
-              Shipment Details
+            <h2 className="text-lg font-semibold text-black">
+              Package Details
             </h2>
 
-            <p className="mt-1 text-sm text-gray-500">
-              View complete shipment information.
+            <p className="text-sm text-gray-500">
+              Information about the shipment package
             </p>
           </div>
 
         </div>
 
-        {/* Status */}
-        <span
-          className={`inline-flex w-fit rounded-[5px] px-4 py-2 text-sm font-medium ${getStatusStyle(
-            shipment.status
-          )}`}
-        >
-          {shipment.status}
-        </span>
+        <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 
-      </div>
+          <div>
+            <p className="text-sm text-gray-500">
+              Package Type
+            </p>
 
-      {/* Tracking Number */}
-      <div className="rounded-[5px] border border-gray-200 bg-white p-6">
+            <p className="mt-1 font-medium text-gray-800">
+              {shipment.packageType || "N/A"}
+            </p>
+          </div>
 
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm text-gray-500">
+              Weight
+            </p>
+
+            <p className="mt-1 font-medium text-gray-800">
+              {shipment.weight
+                ? `${shipment.weight} kg`
+                : "N/A"}
+            </p>
+          </div>
 
           <div>
             <p className="text-sm text-gray-500">
               Tracking Number
             </p>
 
-            <h3 className="mt-1 text-xl font-bold text-black">
-              {shipment.trackingNumber}
-            </h3>
-          </div>
-
-          <div className="rounded-[5px] bg-gray-100 p-3 text-gray-600">
-            <Package size={25} />
-          </div>
-
-        </div>
-
-      </div>
-
-      {/* Shipment Information */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-
-        {/* Customer Information */}
-        <div className="rounded-[5px] border border-gray-200 bg-white p-6">
-
-          <div className="mb-5 flex items-center gap-3">
-
-            <div className="rounded-[5px] bg-gray-100 p-2">
-              <User
-                size={20}
-                className="text-gray-600"
-              />
-            </div>
-
-            <h3 className="text-lg font-semibold text-black">
-              Customer Information
-            </h3>
-
-          </div>
-
-          <div className="space-y-4">
-
-            {/* Name */}
-            <div>
-              <p className="text-xs font-medium uppercase text-gray-400">
-                Name
-              </p>
-
-              <p className="mt-1 text-sm font-medium text-black">
-                {shipment.customer.name}
-              </p>
-            </div>
-
-            {/* Email */}
-            <div className="flex items-center gap-3">
-
-              <Mail
-                size={17}
-                className="text-gray-400"
-              />
-
-              <span className="text-sm text-gray-600">
-                {shipment.customer.email}
-              </span>
-
-            </div>
-
-            {/* Phone */}
-            <div className="flex items-center gap-3">
-
-              <Phone
-                size={17}
-                className="text-gray-400"
-              />
-
-              <span className="text-sm text-gray-600">
-                {shipment.customer.phone}
-              </span>
-
-            </div>
-
-          </div>
-
-        </div>
-
-        {/* Package Information */}
-        <div className="rounded-[5px] border border-gray-200 bg-white p-6">
-
-          <div className="mb-5 flex items-center gap-3">
-
-            <div className="rounded-[5px] bg-gray-100 p-2">
-              <Package
-                size={20}
-                className="text-gray-600"
-              />
-            </div>
-
-            <h3 className="text-lg font-semibold text-black">
-              Package Information
-            </h3>
-
-          </div>
-
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-
-            {/* Package Type */}
-            <div>
-              <p className="text-xs font-medium uppercase text-gray-400">
-                Package Type
-              </p>
-
-              <p className="mt-1 text-sm font-medium text-black">
-                {shipment.packageType}
-              </p>
-            </div>
-
-            {/* Weight */}
-            <div>
-              <p className="text-xs font-medium uppercase text-gray-400">
-                Weight
-              </p>
-
-              <div className="mt-1 flex items-center gap-2">
-
-                <Weight
-                  size={16}
-                  className="text-gray-400"
-                />
-
-                <p className="text-sm font-medium text-black">
-                  {shipment.weight}
-                </p>
-
-              </div>
-            </div>
-
-            {/* Created Date */}
-            <div>
-              <p className="text-xs font-medium uppercase text-gray-400">
-                Created Date
-              </p>
-
-              <div className="mt-1 flex items-center gap-2">
-
-                <Calendar
-                  size={16}
-                  className="text-gray-400"
-                />
-
-                <p className="text-sm font-medium text-black">
-                  {shipment.createdAt}
-                </p>
-
-              </div>
-            </div>
-
-          </div>
-
-        </div>
-
-      </div>
-
-      {/* Route */}
-      <div className="rounded-[5px] border border-gray-200 bg-white p-6">
-
-        <h3 className="mb-6 text-lg font-semibold text-black">
-          Shipment Route
-        </h3>
-
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-
-          {/* Origin */}
-          <div className="flex items-start gap-4">
-
-            <div className="rounded-full bg-green-50 p-3 text-green-600">
-              <MapPin size={20} />
-            </div>
-
-            <div>
-              <p className="text-xs uppercase text-gray-400">
-                Origin
-              </p>
-
-              <p className="mt-1 font-semibold text-black">
-                {shipment.origin}
-              </p>
-            </div>
-
-          </div>
-
-          {/* Destination */}
-          <div className="flex items-start gap-4">
-
-            <div className="rounded-full bg-blue-50 p-3 text-blue-600">
-              <MapPin size={20} />
-            </div>
-
-            <div>
-              <p className="text-xs uppercase text-gray-400">
-                Destination
-              </p>
-
-              <p className="mt-1 font-semibold text-black">
-                {shipment.destination}
-              </p>
-            </div>
-
-          </div>
-
-        </div>
-
-      </div>
-
-      {/* Tracking History */}
-      <div className="rounded-[5px] border border-gray-200 bg-white p-6">
-
-        <div className="mb-6 flex items-center gap-3">
-
-          <div className="rounded-[5px] bg-gray-100 p-2 text-gray-600">
-            <Truck size={20} />
-          </div>
-
-          <div>
-            <h3 className="text-lg font-semibold text-black">
-              Tracking History
-            </h3>
-
-            <p className="text-sm text-gray-500">
-              Shipment movement and status updates.
+            <p className="mt-1 font-medium text-gray-800">
+              {shipment.trackingNumber || "N/A"}
             </p>
           </div>
 
+          <div className="sm:col-span-2 lg:col-span-3">
+
+            <p className="text-sm text-gray-500">
+              Description
+            </p>
+
+            <p className="mt-1 font-medium text-gray-800">
+              {shipment.description || "No description provided."}
+            </p>
+
+          </div>
+
         </div>
+      </div>
 
-        {/* Timeline */}
-        <div className="relative space-y-6">
+     {/* =====================================================
+    TRACKING HISTORY
+===================================================== */}
 
-          {shipment.trackingHistory.map((item, index) => (
+<div className="mt-6 rounded-[5px] border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
+
+  <div>
+    <h2 className="text-xl font-semibold text-black">
+      Tracking History
+    </h2>
+
+    <p className="mt-1 text-sm text-gray-500">
+      Shipment progress from booking to delivery
+    </p>
+  </div>
+
+  <div className="mt-8">
+
+    {trackingLoading ? (
+      <div className="flex items-center justify-center py-10">
+        <div className="flex items-center gap-2 text-sm text-gray-500">
+          <Loader2
+            size={18}
+            className="animate-spin"
+          />
+          Loading tracking history...
+        </div>
+      </div>
+    ) : (
+
+      trackingSteps.map((step, index) => {
+
+        /*
+         * Find this status in backend tracking history
+         */
+        const historyItem = trackingHistory.find(
+          (item) =>
+            item.status?.trim().toLowerCase() ===
+            step.toLowerCase()
+        );
+
+        /*
+         * Current shipment status
+         */
+        const currentIndex = getStatusIndex(
+          shipment.status
+        );
+
+        /*
+         * Step is completed if it is before
+         * or equal to current shipment status
+         */
+        const completed =
+          currentIndex >= 0 &&
+          index <= currentIndex;
+
+        /*
+         * Current active status
+         */
+        const current =
+          currentIndex === index;
+
+        return (
+          <div
+            key={step}
+            className="relative flex gap-4 pb-8 last:pb-0"
+          >
+
+            {/* CONNECTING LINE */}
+
+            {index < trackingSteps.length - 1 && (
+              <div
+                className={`absolute left-[15px] top-8 h-full w-px ${
+                  index < currentIndex
+                    ? "bg-green-500"
+                    : "bg-gray-200"
+                }`}
+              />
+            )}
+
+            {/* STATUS CIRCLE */}
+
             <div
-              key={index}
-              className="relative flex gap-4"
+              className={`relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 ${
+                completed
+                  ? "border-green-500 bg-green-500 text-white"
+                  : "border-gray-300 bg-white text-gray-400"
+              } ${
+                current
+                  ? "ring-4 ring-green-100"
+                  : ""
+              }`}
             >
+              <CheckCircle size={16} />
+            </div>
 
-              {/* Timeline Icon */}
-              <div className="flex flex-col items-center">
+            {/* STATUS DETAILS */}
 
-                <div
-                  className={`rounded-full p-2 ${
-                    item.completed
-                      ? "bg-green-50 text-green-600"
-                      : "bg-gray-100 text-gray-400"
+            <div className="flex-1">
+
+              <div className="flex flex-col justify-between gap-1 sm:flex-row">
+
+                <h3
+                  className={`font-medium ${
+                    completed
+                      ? "text-green-600"
+                      : "text-gray-400"
                   }`}
                 >
-                  {item.completed ? (
-                    <CheckCircle size={18} />
-                  ) : (
-                    <Clock size={18} />
-                  )}
-                </div>
+                  {step}
+                </h3>
 
-                {/* Timeline Line */}
-                {index !==
-                  shipment.trackingHistory.length - 1 && (
-                  <div className="mt-2 h-full w-px bg-gray-200" />
+                {/* Show date only when backend has this update */}
+
+                {historyItem && (
+                  <span className="text-sm text-gray-500">
+                    {historyItem.createdAt
+                      ? new Date(
+                          historyItem.createdAt
+                        ).toLocaleString()
+                      : historyItem.dateTime
+                      ? new Date(
+                          historyItem.dateTime
+                        ).toLocaleString()
+                      : "Date unavailable"}
+                  </span>
                 )}
 
               </div>
 
-              {/* Timeline Details */}
-              <div className="pb-2">
+              {/* IF UPDATE EXISTS */}
 
-                <h4
-                  className={`text-sm font-semibold ${
-                    item.completed
-                      ? "text-black"
-                      : "text-gray-400"
-                  }`}
-                >
-                  {item.status}
-                </h4>
+              {historyItem ? (
 
-                <p className="mt-1 text-sm text-gray-500">
-                  {item.location}
+                <>
+                  <div className="mt-1 flex items-center gap-1.5 text-sm text-gray-500">
+
+                    <MapPin
+                      size={14}
+                      className={
+                        completed
+                          ? "text-green-500"
+                          : "text-gray-400"
+                      }
+                    />
+
+                    <span>
+                      {historyItem.location ||
+                        "Location unavailable"}
+                    </span>
+
+                  </div>
+
+                  {historyItem.remarks && (
+                    <p className="mt-2 text-sm text-gray-500">
+                      {historyItem.remarks}
+                    </p>
+                  )}
+                </>
+
+              ) : (
+
+                /*
+                 * If backend doesn't have the update yet,
+                 * still show the step as Pending.
+                 */
+
+                <p className="mt-1 text-sm text-gray-400">
+                  {completed
+                    ? "Completed"
+                    : "Pending"}
                 </p>
 
-                <p className="mt-1 text-xs text-gray-400">
-                  {item.date}{" "}
-                  {item.time !== "-" && `• ${item.time}`}
-                </p>
-
-              </div>
+              )}
 
             </div>
-          ))}
 
-        </div>
+          </div>
+        );
+      })
 
-      </div>
+    )}
+
+  </div>
+</div>
 
     </div>
   );

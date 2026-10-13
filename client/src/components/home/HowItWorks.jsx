@@ -105,7 +105,7 @@ const RouteLine = ({ viewBox, d, className }) => (
 
 const HowItWorks = () => {
   return (
-    <section className="w-full bg-white px-6 py-16 lg:px-8">
+    <section className="w-full bg-white px-6 py-7 lg:px-8">
       <div className="mx-auto max-w-7xl">
         {/* Header */}
         <div className="max-w-2xl">

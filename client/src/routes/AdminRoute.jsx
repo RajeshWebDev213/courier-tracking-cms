@@ -1,26 +1,12 @@
 import { Navigate } from "react-router-dom";
-import useAuth from "../hooks/useAuth";
+import useAuth from "./../hooks/useAuth";
 
 const AdminRoute = ({ children }) => {
-  const { user, loading } = useAuth();
+  const { user, isAuthenticated, loading } = useAuth();
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-white">
-        <p className="text-sm text-gray-500">Loading...</p>
-      </div>
-    );
-  }
-
-  // Not logged in
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-
-  // Logged in but not admin
-  if (user.role !== "admin") {
-    return <Navigate to="/" replace />;
-  }
+  if (loading) return null; // wait for getAccount() on refresh
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (String(user?.role).toLowerCase() !== "admin") return <Navigate to="/" replace />;
 
   return children;
 };
