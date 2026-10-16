@@ -351,7 +351,7 @@ const ShipmentDetails = () => {
                 label="Payment"
                 icon={<CreditCard size={16} className="text-teal-500" />}
               >
-                <Badge>{shipment.paymentType || "Pending"}</Badge>
+                <Badge>{shipment.paymentStatus || "Pending"}</Badge>
               </Tile>
 
               <Tile

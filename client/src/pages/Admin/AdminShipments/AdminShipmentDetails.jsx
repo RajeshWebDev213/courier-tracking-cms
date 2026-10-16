@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+
 import {
   ArrowLeft,
   Package,
@@ -8,6 +9,7 @@ import {
   Phone,
   CheckCircle,
   Loader2,
+  IndianRupee,
 } from "lucide-react";
 
 import {
@@ -183,6 +185,7 @@ const AdminShipmentDetails = () => {
             size={18}
             className="animate-spin"
           />
+
           Loading shipment details...
         </div>
       </div>
@@ -229,6 +232,7 @@ const AdminShipmentDetails = () => {
             className="mb-3 inline-flex items-center gap-2 text-sm text-gray-500 transition hover:text-black"
           >
             <ArrowLeft size={16} />
+
             Back to Shipments
           </Link>
 
@@ -252,6 +256,7 @@ const AdminShipmentDetails = () => {
             {shipment.trackingNumber || "N/A"}
           </p>
         </div>
+
       </div>
 
       {/* =====================================================
@@ -281,6 +286,7 @@ const AdminShipmentDetails = () => {
                 {shipment.status || "Booked"}
               </h2>
             </div>
+
           </div>
 
           <span
@@ -290,7 +296,9 @@ const AdminShipmentDetails = () => {
           >
             {shipment.status || "Booked"}
           </span>
+
         </div>
+
       </div>
 
       {/* =====================================================
@@ -321,6 +329,7 @@ const AdminShipmentDetails = () => {
                 Sender information
               </p>
             </div>
+
           </div>
 
           <div className="mt-6 space-y-4 text-sm">
@@ -342,6 +351,7 @@ const AdminShipmentDetails = () => {
 
               <div className="mt-1 flex items-center gap-2 font-medium text-gray-800">
                 <Phone size={15} />
+
                 {shipment.sender?.phone || "N/A"}
               </div>
             </div>
@@ -363,6 +373,7 @@ const AdminShipmentDetails = () => {
 
               <p className="mt-1 font-medium text-gray-800">
                 {shipment.sender?.city || "N/A"}
+
                 {shipment.sender?.state
                   ? `, ${shipment.sender.state}`
                   : ""}
@@ -404,6 +415,7 @@ const AdminShipmentDetails = () => {
                 Receiver information
               </p>
             </div>
+
           </div>
 
           <div className="mt-6 space-y-4 text-sm">
@@ -425,6 +437,7 @@ const AdminShipmentDetails = () => {
 
               <div className="mt-1 flex items-center gap-2 font-medium text-gray-800">
                 <Phone size={15} />
+
                 {shipment.receiver?.phone || "N/A"}
               </div>
             </div>
@@ -446,6 +459,7 @@ const AdminShipmentDetails = () => {
 
               <p className="mt-1 font-medium text-gray-800">
                 {shipment.receiver?.city || "N/A"}
+
                 {shipment.receiver?.state
                   ? `, ${shipment.receiver.state}`
                   : ""}
@@ -496,6 +510,8 @@ const AdminShipmentDetails = () => {
 
         <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 
+          {/* PACKAGE TYPE */}
+
           <div>
             <p className="text-sm text-gray-500">
               Package Type
@@ -505,6 +521,8 @@ const AdminShipmentDetails = () => {
               {shipment.packageType || "N/A"}
             </p>
           </div>
+
+          {/* WEIGHT */}
 
           <div>
             <p className="text-sm text-gray-500">
@@ -518,6 +536,8 @@ const AdminShipmentDetails = () => {
             </p>
           </div>
 
+          {/* TRACKING NUMBER */}
+
           <div>
             <p className="text-sm text-gray-500">
               Tracking Number
@@ -528,6 +548,8 @@ const AdminShipmentDetails = () => {
             </p>
           </div>
 
+          {/* DESCRIPTION */}
+
           <div className="sm:col-span-2 lg:col-span-3">
 
             <p className="text-sm text-gray-500">
@@ -535,199 +557,291 @@ const AdminShipmentDetails = () => {
             </p>
 
             <p className="mt-1 font-medium text-gray-800">
-              {shipment.description || "No description provided."}
+              {shipment.description ||
+                "No description provided."}
             </p>
 
           </div>
 
         </div>
+
       </div>
 
-     {/* =====================================================
-    TRACKING HISTORY
-===================================================== */}
+      {/* =====================================================
+          SERVICE DETAILS
+      ===================================================== */}
 
-<div className="mt-6 rounded-[5px] border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
+      <div className="mt-6 rounded-[5px] border border-gray-200 bg-white p-6 shadow-sm">
 
-  <div>
-    <h2 className="text-xl font-semibold text-black">
-      Tracking History
-    </h2>
+        <div className="flex items-center gap-3">
 
-    <p className="mt-1 text-sm text-gray-500">
-      Shipment progress from booking to delivery
-    </p>
-  </div>
+          <div className="flex h-10 w-10 items-center justify-center rounded-[5px] bg-green-50">
+            <IndianRupee
+              size={19}
+              className="text-green-600"
+            />
+          </div>
 
-  <div className="mt-8">
+          <div>
+            <h2 className="text-lg font-semibold text-black">
+              Service Details
+            </h2>
 
-    {trackingLoading ? (
-      <div className="flex items-center justify-center py-10">
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <Loader2
-            size={18}
-            className="animate-spin"
-          />
-          Loading tracking history...
+            <p className="text-sm text-gray-500">
+              Courier service selected for this shipment
+            </p>
+          </div>
+
         </div>
-      </div>
-    ) : (
 
-      trackingSteps.map((step, index) => {
+        <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 
-        /*
-         * Find this status in backend tracking history
-         */
-        const historyItem = trackingHistory.find(
-          (item) =>
-            item.status?.trim().toLowerCase() ===
-            step.toLowerCase()
-        );
+          {/* SERVICE TYPE */}
 
-        /*
-         * Current shipment status
-         */
-        const currentIndex = getStatusIndex(
-          shipment.status
-        );
+          <div>
+            <p className="text-sm text-gray-500">
+              Service Type
+            </p>
 
-        /*
-         * Step is completed if it is before
-         * or equal to current shipment status
-         */
-        const completed =
-          currentIndex >= 0 &&
-          index <= currentIndex;
+            <p className="mt-1 font-medium text-gray-800">
+              {shipment.service?.name || "N/A"}
+            </p>
+          </div>
 
-        /*
-         * Current active status
-         */
-        const current =
-          currentIndex === index;
+          {/* SERVICE PRICE */}
 
-        return (
-          <div
-            key={step}
-            className="relative flex gap-4 pb-8 last:pb-0"
-          >
+          <div>
+            <p className="text-sm text-gray-500">
+              Service Price
+            </p>
 
-            {/* CONNECTING LINE */}
+            <div className="mt-1 flex items-center gap-1 font-semibold text-green-600">
 
-            {index < trackingSteps.length - 1 && (
-              <div
-                className={`absolute left-[15px] top-8 h-full w-px ${
-                  index < currentIndex
-                    ? "bg-green-500"
-                    : "bg-gray-200"
-                }`}
-              />
-            )}
+              <IndianRupee size={16} />
 
-            {/* STATUS CIRCLE */}
+              <span>
+                {shipment.service?.price !== undefined &&
+                shipment.service?.price !== null
+                  ? Number(
+                      shipment.service.price
+                    ).toFixed(2)
+                  : "N/A"}
+              </span>
 
-            <div
-              className={`relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 ${
-                completed
-                  ? "border-green-500 bg-green-500 text-white"
-                  : "border-gray-300 bg-white text-gray-400"
-              } ${
-                current
-                  ? "ring-4 ring-green-100"
-                  : ""
-              }`}
-            >
-              <CheckCircle size={16} />
             </div>
+          </div>
 
-            {/* STATUS DETAILS */}
+        
 
-            <div className="flex-1">
+        </div>
 
-              <div className="flex flex-col justify-between gap-1 sm:flex-row">
+      </div>
 
-                <h3
-                  className={`font-medium ${
-                    completed
-                      ? "text-green-600"
-                      : "text-gray-400"
-                  }`}
-                >
-                  {step}
-                </h3>
 
-                {/* Show date only when backend has this update */}
+      <div className="mt-6 rounded-[5px] border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
 
-                {historyItem && (
-                  <span className="text-sm text-gray-500">
-                    {historyItem.createdAt
-                      ? new Date(
-                          historyItem.createdAt
-                        ).toLocaleString()
-                      : historyItem.dateTime
-                      ? new Date(
-                          historyItem.dateTime
-                        ).toLocaleString()
-                      : "Date unavailable"}
-                  </span>
-                )}
+        <div>
+          <h2 className="text-xl font-semibold text-black">
+            Tracking History
+          </h2>
+
+          <p className="mt-1 text-sm text-gray-500">
+            Shipment progress from booking to delivery
+          </p>
+        </div>
+
+        <div className="mt-8">
+
+          {trackingLoading ? (
+
+            <div className="flex items-center justify-center py-10">
+
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+
+                <Loader2
+                  size={18}
+                  className="animate-spin"
+                />
+
+                Loading tracking history...
 
               </div>
 
-              {/* IF UPDATE EXISTS */}
+            </div>
 
-              {historyItem ? (
+          ) : (
 
-                <>
-                  <div className="mt-1 flex items-center gap-1.5 text-sm text-gray-500">
+            trackingSteps.map((step, index) => {
 
-                    <MapPin
-                      size={14}
-                      className={
-                        completed
-                          ? "text-green-500"
-                          : "text-gray-400"
-                      }
+              /*
+               * Find this status in backend tracking history
+               */
+
+              const historyItem =
+                trackingHistory.find(
+                  (item) =>
+                    item.status
+                      ?.trim()
+                      .toLowerCase() ===
+                    step.toLowerCase()
+                );
+
+              /*
+               * Current shipment status
+               */
+
+              const currentIndex =
+                getStatusIndex(
+                  shipment.status
+                );
+
+              /*
+               * Step is completed if it is before
+               * or equal to current shipment status
+               */
+
+              const completed =
+                currentIndex >= 0 &&
+                index <= currentIndex;
+
+              /*
+               * Current active status
+               */
+
+              const current =
+                currentIndex === index;
+
+              return (
+                <div
+                  key={step}
+                  className="relative flex gap-4 pb-8 last:pb-0"
+                >
+
+                  {/* CONNECTING LINE */}
+
+                  {index <
+                    trackingSteps.length - 1 && (
+
+                    <div
+                      className={`absolute left-[15px] top-8 h-full w-px ${
+                        index < currentIndex
+                          ? "bg-green-500"
+                          : "bg-gray-200"
+                      }`}
                     />
 
-                    <span>
-                      {historyItem.location ||
-                        "Location unavailable"}
-                    </span>
+                  )}
+
+                  {/* STATUS CIRCLE */}
+
+                  <div
+                    className={`relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 ${
+                      completed
+                        ? "border-green-500 bg-green-500 text-white"
+                        : "border-gray-300 bg-white text-gray-400"
+                    } ${
+                      current
+                        ? "ring-4 ring-green-100"
+                        : ""
+                    }`}
+                  >
+                    <CheckCircle size={16} />
+                  </div>
+
+                  {/* STATUS DETAILS */}
+
+                  <div className="flex-1">
+
+                    <div className="flex flex-col justify-between gap-1 sm:flex-row">
+
+                      <h3
+                        className={`font-medium ${
+                          completed
+                            ? "text-green-600"
+                            : "text-gray-400"
+                        }`}
+                      >
+                        {step}
+                      </h3>
+
+                      {/* Show date only when backend has this update */}
+
+                      {historyItem && (
+                        <span className="text-sm text-gray-500">
+
+                          {historyItem.createdAt
+                            ? new Date(
+                                historyItem.createdAt
+                              ).toLocaleString()
+                            : historyItem.dateTime
+                            ? new Date(
+                                historyItem.dateTime
+                              ).toLocaleString()
+                            : "Date unavailable"}
+
+                        </span>
+                      )}
+
+                    </div>
+
+                    {/* IF UPDATE EXISTS */}
+
+                    {historyItem ? (
+
+                      <>
+
+                        <div className="mt-1 flex items-center gap-1.5 text-sm text-gray-500">
+
+                          <MapPin
+                            size={14}
+                            className={
+                              completed
+                                ? "text-green-500"
+                                : "text-gray-400"
+                            }
+                          />
+
+                          <span>
+                            {historyItem.location ||
+                              "Location unavailable"}
+                          </span>
+
+                        </div>
+
+                        {historyItem.remarks && (
+                          <p className="mt-2 text-sm text-gray-500">
+                            {historyItem.remarks}
+                          </p>
+                        )}
+
+                      </>
+
+                    ) : (
+
+                      /*
+                       * If backend doesn't have the update yet,
+                       * still show the step as Pending.
+                       */
+
+                      <p className="mt-1 text-sm text-gray-400">
+                        {completed
+                          ? "Completed"
+                          : "Pending"}
+                      </p>
+
+                    )}
 
                   </div>
 
-                  {historyItem.remarks && (
-                    <p className="mt-2 text-sm text-gray-500">
-                      {historyItem.remarks}
-                    </p>
-                  )}
-                </>
+                </div>
+              );
+            })
 
-              ) : (
+          )}
 
-                /*
-                 * If backend doesn't have the update yet,
-                 * still show the step as Pending.
-                 */
+        </div>
 
-                <p className="mt-1 text-sm text-gray-400">
-                  {completed
-                    ? "Completed"
-                    : "Pending"}
-                </p>
-
-              )}
-
-            </div>
-
-          </div>
-        );
-      })
-
-    )}
-
-  </div>
-</div>
+      </div>
 
     </div>
   );

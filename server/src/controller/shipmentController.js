@@ -12,28 +12,14 @@ const generateTrackingNumber = () => {
 export const createShipment = async (req, res) => {
   try {
     const {
-      senderName,
-      senderPhone,
-      senderAddress,
-      senderCity,
-      senderState,
-      senderPincode,
-
-      receiverName,
-      receiverPhone,
-      receiverAddress,
-      receiverCity,
-      receiverState,
-      receiverPincode,
-
+      sender,
+      receiver,
       packageType,
       weight,
       description,
-
       serviceId,
     } = req.body;
 
-    // Check service
     const service = await Service.findOne({
       _id: serviceId,
       status: "active",
@@ -46,28 +32,27 @@ export const createShipment = async (req, res) => {
       });
     }
 
-    // Create shipment
     const shipment = await Shipment.create({
       trackingNumber: generateTrackingNumber(),
 
       customer: req.user._id,
 
       sender: {
-        name: senderName,
-        phone: senderPhone,
-        address: senderAddress,
-        city: senderCity,
-        state: senderState,
-        pincode: senderPincode,
+        name: sender.name,
+        phone: sender.phone,
+        address: sender.address,
+        city: sender.city,
+        state: sender.state,
+        pincode: sender.pincode,
       },
 
       receiver: {
-        name: receiverName,
-        phone: receiverPhone,
-        address: receiverAddress,
-        city: receiverCity,
-        state: receiverState,
-        pincode: receiverPincode,
+        name: receiver.name,
+        phone: receiver.phone,
+        address: receiver.address,
+        city: receiver.city,
+        state: receiver.state,
+        pincode: receiver.pincode,
       },
 
       packageType,
@@ -83,11 +68,10 @@ export const createShipment = async (req, res) => {
       status: "Booked",
     });
 
-    // Create initial tracking update
     await TrackingUpdate.create({
       shipment: shipment._id,
       status: "Booked",
-      location: senderCity,
+      location: sender.city,
       remarks: "Shipment booked successfully",
     });
 
@@ -96,7 +80,6 @@ export const createShipment = async (req, res) => {
       message: "Shipment created successfully",
       shipment,
     });
-
   } catch (error) {
     console.error("Create shipment error:", error);
 

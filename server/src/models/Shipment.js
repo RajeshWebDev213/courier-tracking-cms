@@ -135,6 +135,10 @@ const shipmentSchema = new mongoose.Schema(
     "Cancelled",
   ],
   default: "Booked",
+},  paymentStatus: {
+  type: String,
+  enum: ["Pending", "Successful"],
+  default: "Pending",
 },
   },
   {
