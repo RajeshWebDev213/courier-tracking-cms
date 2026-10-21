@@ -4,7 +4,7 @@ import Navbar from "./components/common/Navbar";
 import AuthLayout from "./layouts/AuthLayout";
 
 import Login from "./components/auth/Login";
-import Register from "./components/auth/register";
+import Register from "./components/auth/Register";
 
 import Home from "./pages/Home";
 import TrackParcel from "./pages/TrackParcel";

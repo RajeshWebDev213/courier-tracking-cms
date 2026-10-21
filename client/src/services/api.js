@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Connect backend
 const api = axios.create({
-  baseURL: "http://localhost:5000/",
+  baseURL: "https://courier-tracking-cms.onrender.com/",
   withCredentials: true,
 });
 
