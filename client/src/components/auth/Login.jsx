@@ -72,8 +72,7 @@ const handleSubmit = async (e) => {
     password,
   });
 
-  console.log("LOGIN RESPONSE:", response);
-  console.log("LOGIN ROLE:", response?.user?.role);
+
 
   if (response?.user?.role === "admin") {
     console.log("GOING TO ADMIN");
@@ -81,7 +80,7 @@ const handleSubmit = async (e) => {
     return;
   }
 
-  console.log("GOING TO USER");
+  
   navigate(redirectTo, { replace: true });
 
 } catch (err) {
@@ -171,12 +170,6 @@ const handleSubmit = async (e) => {
                 Password
               </label>
 
-              <Link
-                to="/forgot-password"
-                className="text-xs text-gray-500 hover:text-black"
-              >
-                Forgot password?
-              </Link>
             </div>
 
             <div className="relative">

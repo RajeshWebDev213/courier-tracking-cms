@@ -236,7 +236,7 @@ const About = () => {
                 </p>
 
                 <p className="font-mono text-lg font-bold">
-                  CR-48213907
+                  CR48213907
                 </p>
               </div>
 

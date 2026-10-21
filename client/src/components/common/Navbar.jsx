@@ -6,10 +6,11 @@ import useAuth from "../../hooks/useAuth";
 
 const NAV_LINKS = [
   { to: "/", label: "Home" },
+  { to: "/about", label: "About" },
   { to: "/track-parcel", label: "Track Parcel" },
   { to: "/shipments", label: "Shipments" },
   { to: "/gallery", label: "Gallery" },
-  { to: "/about", label: "About" },
+
 ];
 
 const PROFILE_LINKS = [

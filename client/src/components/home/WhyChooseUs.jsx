@@ -80,9 +80,9 @@ const WhyChooseUs = () => {
                 </div>
 
                 {/* Arrow */}
-                <div className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-full bg-white text-black shadow-sm transition duration-300 group-hover:bg-black group-hover:text-white">
+                {/* <div className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-full bg-white text-black shadow-sm transition duration-300 group-hover:bg-black group-hover:text-white">
                   <ArrowUpRight size={18} />
-                </div>
+                </div> */}
               </div>
 
               {/* Content */}
@@ -96,9 +96,6 @@ const WhyChooseUs = () => {
                   {reason.description}
                 </p>
 
-                <div className="mt-6 text-sm font-semibold text-black">
-                  Learn more →
-                </div>
               </div>
             </div>
           ))}
