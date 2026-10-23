@@ -7,6 +7,7 @@ import useAuth from "../../hooks/useAuth";
 const NAV_LINKS = [
   { to: "/", label: "Home" },
   { to: "/about", label: "About" },
+  { to: "/services", label : "Services"},
   { to: "/track-parcel", label: "Track Parcel" },
   { to: "/shipments", label: "Shipments" },
   { to: "/gallery", label: "Gallery" },
@@ -129,7 +130,7 @@ const Navbar = () => {
                 fontFamily: "Michroma, sans-serif",
               }}
             >
-              PERCELFLOW
+              PARCELFLOW
             </span>
 
             <span className="mt-0.5 whitespace-nowrap pl-0.5 text-[6px] font-medium tracking-[0.18em] text-gray-500 sm:mt-1 sm:text-[8px] sm:tracking-[0.3em]">
